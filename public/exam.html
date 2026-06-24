@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QFwork.ai — Live AI Interview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#0d7a6f; --teal-d:#0a5f56; --orange:#ef6a3d;
+    --ink:#101828; --mut:#667085; --line:#e7eaee; --bg:#f6f8fa; --card:#ffffff;
+    --good:#15803d; --warn:#c2410c;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 12px 32px rgba(16,24,40,.06);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; }
+  body{ font-family:'Inter',system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--ink); background:var(--bg);
+        -webkit-font-smoothing:antialiased; }
+  .serif{ font-family:'Fraunces',Georgia,serif; }
+
+  /* top bar */
+  .topbar{ display:flex; align-items:center; gap:11px; padding:15px 26px; background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  .brandlink{ display:flex; align-items:center; gap:11px; cursor:pointer; text-decoration:none; color:inherit; border-radius:10px; }
+  .brandlink:hover{ opacity:.82; }
+  .logo{ width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg,var(--orange),#f59e6b); color:#fff;
+         display:grid; place-items:center; font-weight:700; font-size:13px; letter-spacing:.02em; }
+  .brand{ font-weight:700; letter-spacing:-.01em; font-size:16px; }
+  .brand span{ color:var(--teal); }
+  .topbar .right{ margin-left:auto; font-size:13px; color:var(--mut); }
+
+  main{ max-width:980px; margin:0 auto; padding:40px 22px 90px; }
+  .view{ display:none; animation:rise .35s ease both; }
+  .view.active{ display:block; }
+  @keyframes rise{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:none;} }
+
+  /* ── HOME ── */
+  .eyebrow{ color:var(--teal); font-weight:600; font-size:13px; letter-spacing:.08em; text-transform:uppercase; margin:0 0 10px; }
+  h1.hero{ font-size:44px; line-height:1.04; letter-spacing:-.02em; margin:0 0 12px; font-weight:600; }
+  .lede{ color:var(--mut); font-size:17px; max-width:560px; margin:0 0 34px; line-height:1.55; }
+  .grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  .scn{ text-align:left; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; cursor:pointer;
+        transition:.18s; display:flex; gap:16px; align-items:flex-start; box-shadow:var(--shadow); }
+  .scn:hover{ border-color:var(--teal); transform:translateY(-3px); }
+  .chip{ width:44px; height:44px; border-radius:11px; background:#e9f6f4; color:var(--teal); display:grid; place-items:center; flex:none; }
+  .scn h3{ margin:0 0 5px; font-size:17px; letter-spacing:-.01em; }
+  .scn p{ margin:0 0 10px; font-size:13.5px; color:var(--mut); line-height:1.5; }
+  .scn .go{ font-size:13px; font-weight:600; color:var(--teal); }
+  .home-foot{ color:var(--mut); font-size:13px; margin-top:26px; }
+
+  /* ── PRECALL ── */
+  .pc{ max-width:560px; margin:0 auto; background:var(--card); border:1px solid var(--line); border-radius:20px; padding:30px; box-shadow:var(--shadow); }
+  .back{ background:none; border:0; color:var(--mut); font:inherit; cursor:pointer; padding:0; margin-bottom:20px; }
+  .back:hover{ color:var(--ink); }
+  .pc-head{ display:flex; gap:14px; align-items:center; margin-bottom:6px; }
+  .pc-head .chip{ width:48px; height:48px; }
+  .pc-head h2{ margin:0; font-size:22px; letter-spacing:-.01em; }
+  .pc-brief{ color:var(--mut); line-height:1.55; margin:14px 0 22px; }
+  label.fld{ display:block; font-size:13px; font-weight:600; margin-bottom:7px; }
+  label.fld span{ color:var(--mut); font-weight:400; }
+  textarea{ width:100%; min-height:84px; resize:vertical; border:1px solid var(--line); border-radius:12px; padding:12px 14px;
+            font:inherit; color:var(--ink); background:#fcfdfd; }
+  textarea:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(13,122,111,.12); }
+  .ex{ color:var(--mut); font-size:12.5px; margin:8px 2px 0; }
+  .devnote{ display:flex; gap:9px; align-items:center; color:var(--mut); font-size:13px; margin:22px 0; }
+  .btn{ border:0; border-radius:12px; font:inherit; font-weight:600; cursor:pointer; padding:14px 22px; transition:.15s; }
+  .btn-primary{ background:var(--teal); color:#fff; width:100%; font-size:16px; display:flex; align-items:center; justify-content:center; gap:9px; }
+  .btn-primary:hover{ background:var(--teal-d); }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+  /* ── ROOM ── */
+  .room-strip{ display:flex; align-items:center; gap:14px; margin-bottom:16px; }
+  .room-strip .label{ font-weight:600; }
+  .room-strip .scn-name{ color:var(--mut); }
+  .room-strip .sep{ color:var(--line); }
+  .live{ display:inline-flex; align-items:center; gap:7px; color:#e11d48; font-weight:600; font-size:13px; }
+  .live .dot{ width:8px; height:8px; border-radius:50%; background:#e11d48; box-shadow:0 0 0 0 rgba(225,29,72,.5); animation:pulse 1.6s infinite; }
+  @keyframes pulse{ 0%{ box-shadow:0 0 0 0 rgba(225,29,72,.5);} 70%{ box-shadow:0 0 0 7px rgba(225,29,72,0);} 100%{ box-shadow:0 0 0 0 rgba(225,29,72,0);} }
+  .onepill{ margin-left:auto; font-size:12px; font-weight:600; color:var(--mut); border:1px solid var(--line); border-radius:999px; padding:5px 12px; }
+  .prompt-card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px 18px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .prompt-card .k{ font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--teal); }
+  .prompt-card p{ margin:6px 0 0; line-height:1.5; }
+  .stage{ position:relative; background:#0b1220; border-radius:20px; overflow:hidden; aspect-ratio:16/9; box-shadow:0 24px 60px rgba(2,6,23,.30); }
+  .stage iframe{ width:100%; height:100%; border:0; display:block; }
+  .ai-badge{ position:absolute; top:14px; right:14px; background:rgba(255,255,255,.92); color:var(--ink); font-size:12px; font-weight:600;
+             padding:6px 12px; border-radius:999px; backdrop-filter:blur(6px); z-index:2; }
+  .controls{ display:flex; align-items:center; gap:14px; margin-top:18px; }
+  .status{ display:inline-flex; align-items:center; gap:8px; color:var(--mut); font-size:14px; }
+  .status .dot{ width:9px; height:9px; border-radius:50%; background:var(--good); }
+  .btn-end{ margin-left:auto; background:#ef4444; color:#fff; }
+  .btn-end:hover{ background:#dc2626; }
+
+  /* ── BUSY ── */
+  .busy{ text-align:center; padding:90px 0; color:var(--mut); }
+  .spinner{ width:38px; height:38px; border:3px solid var(--line); border-top-color:var(--teal); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 18px; }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+  .busy small{ display:block; margin-top:8px; font-size:12.5px; color:var(--mut); }
+
+  /* ── FEEDBACK ── */
+  h1.fbtitle{ font-size:30px; letter-spacing:-.02em; margin:0 0 18px; font-weight:600; }
+  .hero-score{ display:flex; align-items:center; gap:24px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:24px; box-shadow:var(--shadow); }
+  .ring{ width:120px; height:120px; border-radius:50%; display:grid; place-items:center; flex:none;
+         background:conic-gradient(var(--ring,var(--teal)) calc(var(--p)*1%), #e7eaee 0); }
+  .ring i{ width:88px; height:88px; border-radius:50%; background:#fff; display:grid; place-items:center; font-style:normal; font-size:34px; font-weight:700; }
+  .coach h3{ margin:0 0 6px; font-size:15px; }
+  .coach p{ margin:0; line-height:1.55; }
+  .metrics{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:14px; }
+  .metric{ background:var(--card); border:1px solid var(--line); border-radius:13px; padding:15px; text-align:center; box-shadow:var(--shadow); }
+  .metric b{ display:block; font-size:25px; font-weight:700; }
+  .metric small{ color:var(--mut); font-size:12.5px; }
+  .sec{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-top:14px; box-shadow:var(--shadow); }
+  .sec h3{ margin:0 0 10px; font-size:15px; }
+  .sec ul{ margin:0; padding-left:18px; } .sec li{ margin:7px 0; line-height:1.5; }
+  .corr{ border-left:3px solid var(--line); padding:6px 0 6px 14px; margin:11px 0; }
+  .corr .o{ color:var(--warn); } .corr .b{ color:var(--good); } .corr .r{ color:var(--mut); font-size:13px; margin-top:2px; }
+  .model{ background:#effbf8; border:1px solid #cdeee8; border-radius:12px; padding:14px 16px; line-height:1.6; }
+  .err{ background:#fef2f2; border:1px solid #fecaca; color:#b42318; border-radius:13px; padding:16px 18px; line-height:1.5; }
+  .foot{ color:var(--mut); font-size:12.5px; margin-top:18px; line-height:1.5; }
+  .linkish{ background:none; border:0; color:var(--teal); cursor:pointer; font:inherit; padding:0; text-decoration:underline; }
+
+  /* countdown timer */
+  .right-group{ margin-left:auto; display:flex; align-items:center; gap:12px; }
+  .timepill{ display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:600; color:var(--ink);
+             background:#eef2f4; border-radius:999px; padding:5px 13px; font-variant-numeric:tabular-nums; }
+  .timepill u{ text-decoration:none; color:var(--mut); font-weight:500; }
+  .timepill.low{ color:#dc2626; background:#fee2e2; animation:pulse 1.4s infinite; }
+  .timebar-wrap{ height:4px; background:#eef2f4; border-radius:999px; overflow:hidden; margin:0 0 16px; }
+  .timebar{ height:100%; width:100%; background:var(--teal); border-radius:999px; transition:width 1s linear; }
+  .timebar.low{ background:#f59e0b; } .timebar.crit{ background:#dc2626; }
+
+  /* feedback redesign */
+  .fb-head{ display:flex; align-items:baseline; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
+  .fbsub{ color:var(--mut); font-size:15px; margin:0; }
+  .ring i u{ font-size:14px; color:var(--mut); font-weight:500; text-decoration:none; }
+  .band{ display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+         padding:4px 11px; border-radius:999px; margin-bottom:11px; }
+  .metric .mbar{ height:5px; background:#eef2f4; border-radius:999px; overflow:hidden; margin-top:9px; }
+  .metric .mbar>div{ height:100%; border-radius:999px; }
+  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+  .cols .sec{ margin-top:0; }
+  .good-sec{ border-left:3px solid var(--good); } .warn-sec{ border-left:3px solid var(--warn); }
+  .presence-sec{ border-left:3px solid var(--teal); }
+  .corr{ border-left:3px solid var(--line); padding:8px 0 8px 14px; margin:13px 0; }
+  .corr .tag{ display:inline-block; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+              color:var(--warn); background:#fff4ed; border-radius:5px; padding:2px 7px; margin-right:8px; vertical-align:middle; }
+  .corr .tag.good{ color:var(--good); background:#eafaf0; }
+  .corr .o,.corr .bt{ color:var(--ink); line-height:1.5; } .corr .bt{ margin-top:7px; }
+  .corr .r{ color:var(--mut); font-size:13px; margin-top:6px; }
+  .delivery{ display:grid; gap:13px; }
+  .delivery>div{ display:grid; grid-template-columns:160px 1fr; gap:12px; align-items:start; line-height:1.5; }
+  .delivery b{ color:var(--mut); font-weight:600; font-size:13px; }
+  .model-sec{ background:#f4fbf9; border-color:#cdeee8; }
+  .fb-actions{ margin-top:22px; }
+  @media (max-width:680px){ .cols{ grid-template-columns:1fr; } .delivery>div{ grid-template-columns:1fr; gap:3px; } }
+
+  @media (max-width:680px){
+    .grid,.metrics{ grid-template-columns:1fr; }
+    h1.hero{ font-size:34px; }
+    .hero-score{ flex-direction:column; text-align:center; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="brandlink" onclick="goToStart()" title="Back to start" aria-label="QFwork.ai — back to start">
+    <div class="logo">QF</div>
+    <div class="brand">QFwork<span>.ai</span></div>
+  </a>
+  <div class="right">Live AI Interview</div>
+</div>
+
+<main>
+
+  <!-- ════ HOME ════ -->
+  <section id="home" class="view active">
+    <p class="eyebrow">Live practice</p>
+    <h1 class="hero serif">Practice that talks&nbsp;back.</h1>
+    <p class="lede">Have a real, face-to-face conversation with an AI partner — then get a full breakdown of your workplace English. Pick a scenario to begin.</p>
+    <div class="grid" id="scnGrid"></div>
+    <p class="home-foot">🎧 Headphones recommended · you'll be asked for camera &amp; microphone access.</p>
+  </section>
+
+  <!-- ════ PRECALL (start-call screen) ════ -->
+  <section id="precall" class="view">
+    <div class="pc">
+      <button class="back" onclick="goHome()">← All scenarios</button>
+      <div class="pc-head"><div class="chip" id="pcIcon"></div><h2 id="pcTitle"></h2></div>
+      <p class="pc-brief" id="pcBrief"></p>
+
+      <label class="fld" for="ctx">Add your background or a twist <span>(optional)</span></label>
+      <textarea id="ctx" placeholder="e.g. I'm a nurse applying to a hospital in Hong Kong · or · I work in logistics and want to present a delivery-time project"></textarea>
+      <p class="ex">Leave it blank and the AI will simply ask you at the start — either way the conversation adapts to you.</p>
+
+      <div class="devnote">🎥 Camera + microphone will turn on when the call starts.</div>
+      <button class="btn btn-primary" id="startBtn" onclick="startCall()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        Start call
+      </button>
+    </div>
+  </section>
+
+  <!-- ════ ROOM (live call) ════ -->
+  <section id="room" class="view">
+    <div class="room-strip">
+      <span class="label">Exam room</span>
+      <span class="sep">·</span>
+      <span class="scn-name" id="roomScn"></span>
+      <span class="right-group">
+        <span class="live"><span class="dot"></span> Live</span>
+        <span class="timepill" id="timePill"><span id="timer">05:00</span> <u>left</u></span>
+        <span class="onepill">1-on-1</span>
+      </span>
+    </div>
+    <div class="timebar-wrap"><div class="timebar" id="timebar"></div></div>
+    <div class="prompt-card">
+      <div class="k">Your scenario</div>
+      <p id="roomPrompt"></p>
+    </div>
+    <div class="stage">
+      <span class="ai-badge">AI partner</span>
+      <iframe id="frame" allow="camera; microphone; autoplay; fullscreen; display-capture"></iframe>
+    </div>
+    <div class="controls">
+      <span class="status"><span class="dot"></span> Live — just speak naturally, the AI listens and replies</span>
+      <button class="btn btn-end" id="endBtn" onclick="endCall()">End &amp; get feedback</button>
+    </div>
+  </section>
+
+  <!-- ════ BUSY ════ -->
+  <section id="busy" class="view">
+    <div class="busy">
+      <div class="spinner"></div>
+      <div id="busyText">Connecting…</div>
+      <small id="busySub"></small>
+    </div>
+  </section>
+
+  <!-- ════ FEEDBACK ════ -->
+  <section id="fb" class="view"></section>
+
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+// scenario metadata (display only; the server holds the role-play logic)
+const ICONS = {
+  brief:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>',
+  money:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>',
+  present:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h18M4 4v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4M9 20l3-3 3 3"/></svg>',
+  people:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+};
+const SCENARIOS = [
+  { title:"Job Interview",         icon:'brief',   blurb:"Field your background, strengths and fit — for whatever role you're chasing." },
+  { title:"Salary Negotiation",    icon:'money',   blurb:"You've got the offer. Negotiate the package with a manager who pushes back." },
+  { title:"Business Presentation", icon:'present', blurb:"Present a project, result or idea of your choice to a senior listener." },
+  { title:"Client Meeting",        icon:'people',  blurb:"A first meeting with a prospective client or partner about working together." },
+];
+
+let state = { scenarioTitle:null, conversationId:null, scenarioPrompt:'', seconds:0, timer:null };
+
+// ── render home ──
+$('scnGrid').innerHTML = SCENARIOS.map((s,i) => `
+  <button class="scn" data-i="${i}">
+    <span class="chip">${ICONS[s.icon]}</span>
+    <span>
+      <h3>${s.title}</h3>
+      <p>${s.blurb}</p>
+      <span class="go">Start call →</span>
+    </span>
+  </button>`).join('');
+document.querySelectorAll('.scn').forEach(el =>
+  el.addEventListener('click', () => openPrecall(SCENARIOS[+el.dataset.i]))
+);
+
+// ── view switching (class-based, robust) ──
+function show(id){ ['home','precall','room','busy','fb'].forEach(s => $(s).classList.toggle('active', s===id)); window.scrollTo(0,0); }
+function busy(text, sub){ $('busyText').textContent = text; $('busySub').textContent = sub || ''; show('busy'); }
+function goHome(){ show('home'); }
+// Brand/logo click → back to the starting screen, dropping any active call.
+function goToStart(){ stopTimer(); try { $('frame').src = 'about:blank'; } catch(e){} show('home'); }
+
+// ── precall ──
+let current = null;
+function openPrecall(s){
+  current = s;
+  state.scenarioTitle = s.title;
+  $('pcIcon').innerHTML = ICONS[s.icon];
+  $('pcTitle').textContent = s.title;
+  $('pcBrief').textContent = s.blurb;
+  $('ctx').value = '';
+  show('precall');
+}
+
+// ── start the live Tavus call ──
+async function startCall(){
+  busy('Setting up your AI partner…', 'Connecting to the video room');
+  try{
+    const r = await fetch('/api/conversation', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ scenarioTitle: state.scenarioTitle, userContext: $('ctx').value })
+    });
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error || 'Could not start the interview.');
+
+    state.conversationId = data.conversationId;
+    state.scenarioPrompt = data.scenarioPrompt || '';
+    state.maxSeconds     = data.maxSeconds || 300;
+    $('roomScn').textContent = state.scenarioTitle;
+    $('roomPrompt').textContent = state.scenarioPrompt;
+    $('frame').src = data.conversationUrl;
+    startTimer();
+    show('room');
+  }catch(e){ showError(e.message); }
+}
+
+// ── timer ──
+function startTimer(){
+  state.callStart = Date.now();
+  state.remaining = state.maxSeconds;
+  renderTime();
+  state.timer = setInterval(() => {
+    state.remaining--;
+    renderTime();
+    if(state.remaining <= 0){ stopTimer(); endCall(); }   // time's up → auto-end
+  }, 1000);
+}
+function stopTimer(){ clearInterval(state.timer); }
+function renderTime(){
+  const rem = Math.max(0, state.remaining);
+  $('timer').textContent = `${String(Math.floor(rem/60)).padStart(2,'0')}:${String(rem%60).padStart(2,'0')}`;
+  const pct = state.maxSeconds ? (rem/state.maxSeconds)*100 : 0;
+  $('timebar').style.width = pct + '%';
+  $('timePill').classList.toggle('low',  rem <= 30);
+  $('timebar').classList.toggle('low',  rem <= 60 && rem > 30);
+  $('timebar').classList.toggle('crit', rem <= 30);
+}
+
+// ── end → transcript → feedback ──
+async function endCall(){
+  stopTimer();
+  $('frame').src = 'about:blank';
+  busy('Analysing your workplace English…', 'Fetching the transcript — this can take up to ~20 seconds');
+  try{
+    const r = await fetch('/api/interview-feedback', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        conversationId: state.conversationId,
+        scenarioTitle: state.scenarioTitle,
+        durationSeconds: Math.round((Date.now() - (state.callStart || Date.now())) / 1000)
+      })
+    });
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error || 'Could not generate feedback.');
+    renderFeedback(data.feedback);
+  }catch(e){ showError(e.message); }
+}
+
+function showError(msg){
+  $('fb').innerHTML = `<div class="err">${escapeHtml(msg)}</div>
+    <p style="margin-top:16px;"><button class="linkish" onclick="location.reload()">← Start over</button></p>`;
+  show('fb');
+}
+function escapeHtml(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+// ── feedback report ──
+function band(score){
+  if(score>=86) return { label:'Exceptional', color:'#15803d' };
+  if(score>=71) return { label:'Strong',      color:'#0d7a6f' };
+  if(score>=51) return { label:'Competent',   color:'#ca8a04' };
+  if(score>=31) return { label:'Developing',  color:'#ea580c' };
+  return            { label:'Needs work',  color:'#dc2626' };
+}
+
+function renderFeedback(f){
+  if(!f) return showError('Empty feedback.');
+  const sc = f.scores || {}, da = f.deliveryAnalysis || {};
+  const b  = band(f.overallScore || 0);
+  const corr = (f.sentenceCorrections||[]).map(c => `
+    <div class="corr">
+      <div class="o"><span class="tag">Said</span>“${escapeHtml(c.original)}”</div>
+      <div class="bt"><span class="tag good">Better</span>${escapeHtml(c.better)}</div>
+      <div class="r">${escapeHtml(c.reason)}</div>
+    </div>`).join('');
+
+  $('fb').innerHTML = `
+    <div class="fb-head">
+      <h1 class="fbtitle serif">Your feedback</h1>
+      <p class="fbsub">${escapeHtml(state.scenarioTitle||'')}</p>
+    </div>
+    <div class="hero-score" style="--ring:${b.color}">
+      <div class="ring" style="--p:${f.overallScore||0}"><i>${f.overallScore ?? '—'}<u>/100</u></i></div>
+      <div class="coach">
+        <span class="band" style="background:${b.color}1a;color:${b.color}">${b.label}</span>
+        <h3>Coach's take</h3>
+        <p>${escapeHtml(f.coachNote||'')}</p>
+      </div>
+    </div>
+    <div class="metrics">
+      ${metric('Clarity', sc.clarity)}${metric('Professionalism', sc.professionalism)}
+      ${metric('Confidence', sc.confidence)}${metric('Vocabulary', sc.vocabulary)}
+    </div>
+    <div class="sec"><h3>Summary</h3><p>${escapeHtml(f.summary||'')}</p></div>
+    ${f.presenceFeedback ? `<div class="sec presence-sec"><h3>Presence on camera</h3><p>${escapeHtml(f.presenceFeedback)}</p>
+      ${Array.isArray(f.presencePoints) && f.presencePoints.filter(Boolean).length ? `<ul>${f.presencePoints.filter(Boolean).map(p=>`<li>${escapeHtml(p)}</li>`).join('')}</ul>` : ''}
+      <p class="foot" style="margin-top:9px;">Observed live by the AI's vision during the call — eye contact, expression, posture and engagement (genuinely seen by the camera, not inferred from text).</p></div>` : ''}
+    <div class="cols">
+      <div class="sec good-sec"><h3>What worked</h3><ul>${(f.strengths||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ul></div>
+      <div class="sec warn-sec"><h3>What to improve</h3><ul>${(f.improvements||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ul></div>
+    </div>
+    ${corr ? `<div class="sec"><h3>Line-by-line polish</h3>${corr}</div>` : ''}
+    <div class="sec"><h3>Delivery</h3><div class="delivery">
+      <div><b>Filler words</b><span>${escapeHtml(da.fillerWords||'—')}</span></div>
+      <div><b>Hesitation</b><span>${escapeHtml(da.hesitationAndStutter||'—')}</span></div>
+      <div><b>Confidence markers</b><span>${escapeHtml(da.confidenceMarkers||'—')}</span></div>
+      <div><b>Pacing &amp; flow</b><span>${escapeHtml(da.pacingFlow||'—')}</span></div>
+    </div></div>
+    ${f.rewrittenResponse ? `<div class="sec model-sec"><h3>Model answer</h3><div class="model">${escapeHtml(f.rewrittenResponse)}</div></div>` : ''}
+    <p class="foot">Feedback is generated from a text transcript of the conversation, so delivery notes are inferred from word patterns (fillers, hesitation, hedging) — not from your actual voice tone.</p>
+    <div class="fb-actions"><button class="btn btn-primary" style="width:auto;" onclick="location.reload()">Practise again</button></div>
+  `;
+  show('fb');
+}
+function metric(label,v){
+  const has = (v ?? null) !== null;
+  const col = has ? band(v).color : '#cbd5e1';
+  return `<div class="metric"><b>${has ? v : '—'}</b><small>${label}</small>
+    <div class="mbar"><div style="width:${has ? v : 0}%;background:${col}"></div></div></div>`;
+}
+
+// ── design preview: open /exam.html?demo=feedback to see the feedback page
+//    with sample data (no Tavus call needed) ──
+if (new URLSearchParams(location.search).get('demo') === 'feedback') {
+  state.scenarioTitle = 'Job Interview';
+  renderFeedback({
+    overallScore: 74,
+    scores: { clarity: 78, professionalism: 81, confidence: 63, vocabulary: 72 },
+    coachNote: "A confident, well-structured interview overall — you tied your background to the role clearly. Your weakest moment was hedging on the 'biggest weakness' question; commit to an answer and show what you did about it.",
+    summary: "You presented a focused, relevant picture of your experience and stayed professional throughout. A few hesitant, hedged moments held back the confidence score, but the substance was strong.",
+    presenceFeedback: "You held steady, direct eye contact with the camera throughout and kept a calm, composed posture — that reads as confident and engaged. Your expression stayed fairly neutral, though; a little more visible warmth when you talk about your wins would make you more memorable.",
+    presencePoints: [
+      "Eye contact — steady and direct at the camera the whole time; this is a real strength and signals confidence.",
+      "Facial expression & engagement — mostly neutral and focused; you listened attentively but rarely smiled, which can read as flat.",
+      "Body language & posture — upright and still, no fidgeting or distracting gestures; composed and professional.",
+      "Confidence & composure — calm and unflustered even on harder questions; no visible nervous signals."
+    ],
+    strengths: [
+      "Opened with a crisp, role-relevant summary: \"I've spent three years in customer operations…\"",
+      "Backed claims with specifics rather than generic praise — you named a concrete project and its outcome."
+    ],
+    improvements: [
+      "On your weakness answer you said \"I guess maybe I'm not great at delegating\" — drop the hedging: state it plainly, then show the fix.",
+      "\"We did pretty well on the project\" is vague — quantify it (e.g. \"cut response time by 30%\").",
+      "You trailed off twice with \"…and stuff like that\" — close thoughts with a clear point instead."
+    ],
+    sentenceCorrections: [
+      { original: "I guess maybe I'm not great at delegating.", better: "One area I'm actively improving is delegation — I used to take on too much, so I now set clearer ownership upfront.", reason: "Replaces hedging with a confident, growth-oriented framing." },
+      { original: "We did pretty well on the project.", better: "We delivered the project two weeks early and cut response time by 30%.", reason: "Specific, quantified outcomes are far more persuasive." }
+    ],
+    deliveryAnalysis: {
+      fillerWords: "Used \"um\" 3 times and \"like\" twice — light and natural, not distracting.",
+      hesitationAndStutter: "Two false starts (\"I— I think…\"), mostly around the weakness question.",
+      confidenceMarkers: "Frequent hedging: \"I guess\", \"maybe\", \"sort of\". These soften otherwise strong points.",
+      pacingFlow: "You spoke around 240 words across 5 answers (~48 words each) in a 4-minute conversation — a comfortable, measured pace that filled the time well without rushing. A couple of answers ran long; tightening those would sharpen your impact."
+    },
+    rewrittenResponse: "Thanks for having me. I've spent the last three years in customer operations, where I led a team of four and owned our support metrics. Last year I redesigned our triage process, which cut average response time by 30% and lifted satisfaction scores from 82% to 91%. I'm drawn to this role because it combines that operational focus with a stronger analytics component, which is exactly where I want to grow. One area I'm actively working on is delegation — I used to absorb too much myself, so I've started setting clear ownership upfront, and it's made my team noticeably more autonomous."
+  });
+}
+</script>
+</body>
+</html>
