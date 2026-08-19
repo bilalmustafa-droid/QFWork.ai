@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>QFwork.ai — Live AI Interview</title>
+<title>QFwork.ai — AI Trainer for Workplace Communication</title>
+<meta name="description" content="Practise workplace English in live video conversations with an AI partner, and get measured feedback on your language, voice and on-camera presence." />
+<link rel="icon" href="logo-mark.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
@@ -22,13 +24,16 @@
 
   /* top bar */
   .topbar{ display:flex; align-items:center; gap:11px; padding:15px 26px; background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
-  .brandlink{ display:flex; align-items:center; gap:11px; cursor:pointer; text-decoration:none; color:inherit; border-radius:10px; }
+  .brandlink{ display:flex; align-items:center; gap:10px; cursor:pointer; text-decoration:none; color:inherit; border-radius:10px; }
   .brandlink:hover{ opacity:.82; }
-  .logo{ width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg,var(--orange),#f59e6b); color:#fff;
-         display:grid; place-items:center; font-weight:700; font-size:13px; letter-spacing:.02em; }
+  .logo{ width:34px; height:34px; object-fit:contain; display:block; flex:none; }
+  /* Shown only if the logo image is missing, so the header never breaks. */
+  .logo-fallback{ border-radius:9px; background:linear-gradient(135deg,var(--orange),#f59e6b); color:#fff;
+                  display:grid; place-items:center; font-weight:700; font-size:13px; letter-spacing:.02em; }
   .brand{ font-weight:700; letter-spacing:-.01em; font-size:16px; }
   .brand span{ color:var(--teal); }
   .topbar .right{ margin-left:auto; font-size:13px; color:var(--mut); }
+  @media (max-width:560px){ .topbar .right{ display:none; } }
 
   main{ max-width:980px; margin:0 auto; padding:40px 22px 90px; }
   .view{ display:none; animation:rise .35s ease both; }
@@ -63,7 +68,31 @@
             font:inherit; color:var(--ink); background:#fcfdfd; }
   textarea:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(13,122,111,.12); }
   .ex{ color:var(--mut); font-size:12.5px; margin:8px 2px 0; }
+  .brief-chips{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 18px; }
+  .brief-chip{ border:1px solid var(--line); background:#fcfdfd; border-radius:999px; padding:8px 13px;
+               font:inherit; font-size:12.5px; color:var(--mut); cursor:pointer; transition:.15s; text-align:left; }
+  .brief-chip:hover{ border-color:var(--teal); color:var(--ink); }
+  .brief-chip.sel{ border-color:var(--teal); background:#e9f6f4; color:var(--teal); font-weight:600; }
   .devnote{ display:flex; gap:9px; align-items:center; color:var(--mut); font-size:13px; margin:22px 0; }
+
+  /* ── DEVICE CHECK ── */
+  .pc-wide{ max-width:620px; }
+  .dc-title{ margin:0 0 6px; font-size:22px; letter-spacing:-.01em; }
+  .dc-preview{ position:relative; margin:18px 0 16px; background:#0b1220; border-radius:14px; overflow:hidden;
+               aspect-ratio:16/9; display:grid; place-items:center; }
+  .dc-preview video{ width:100%; height:100%; object-fit:cover; transform:scaleX(-1); display:block; }
+  .dc-novid{ position:absolute; color:#94a3b8; font-size:14px; }
+  .dc-meter-row{ display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  .dc-meter-label{ font-size:13px; font-weight:600; color:var(--mut); min-width:26px; }
+  .dc-meter{ flex:1; height:8px; background:#eef2f4; border-radius:999px; overflow:hidden; }
+  .dc-meter>div{ height:100%; width:0%; background:var(--teal); border-radius:999px; transition:width .08s linear; }
+  .dc-meter-hint{ font-size:12.5px; color:var(--mut); min-width:112px; text-align:right; }
+  .dc-meter-hint.ok{ color:var(--good); font-weight:600; }
+  .dc-selects{ display:grid; gap:6px; margin-bottom:6px; }
+  .dc-selects select{ width:100%; border:1px solid var(--line); border-radius:12px; padding:11px 13px;
+                      font:inherit; color:var(--ink); background:#fcfdfd; margin-bottom:10px; }
+  .dc-selects select:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(13,122,111,.12); }
+  .dc-status{ font-size:13px; color:var(--warn); min-height:19px; line-height:1.5; }
   .btn{ border:0; border-radius:12px; font:inherit; font-weight:600; cursor:pointer; padding:14px 22px; transition:.15s; }
   .btn-primary{ background:var(--teal); color:#fff; width:100%; font-size:16px; display:flex; align-items:center; justify-content:center; gap:9px; }
   .btn-primary:hover{ background:var(--teal-d); }
@@ -150,8 +179,33 @@
   .delivery{ display:grid; gap:13px; }
   .delivery>div{ display:grid; grid-template-columns:160px 1fr; gap:12px; align-items:start; line-height:1.5; }
   .delivery b{ color:var(--mut); font-weight:600; font-size:13px; }
+  .voice-sec{ border-left:3px solid var(--orange); }
+  .vchips{ display:flex; flex-wrap:wrap; gap:9px; margin:2px 0 15px; }
+  .vchip{ display:inline-flex; flex-direction:column; gap:1px; background:#fff7f2; border:1px solid #f6ddd0;
+          border-radius:10px; padding:8px 13px; font-size:11.5px; color:var(--mut); line-height:1.3; }
+  .vchip b{ font-size:15px; color:var(--ink); font-variant-numeric:tabular-nums; }
   .model-sec{ background:#f4fbf9; border-color:#cdeee8; }
-  .fb-actions{ margin-top:22px; }
+  .fb-actions{ margin-top:22px; display:flex; flex-wrap:wrap; gap:10px; }
+  .btn-secondary{ background:#fff; color:var(--ink); border:1px solid var(--line); display:inline-flex;
+                  align-items:center; gap:8px; }
+  .btn-secondary:hover{ border-color:var(--teal); color:var(--teal); }
+  .fb-saved{ font-size:13px; color:var(--good); font-weight:600; align-self:center; }
+
+  /* ── PRINT / SAVE AS PDF ──
+     Strips app chrome so the browser's own "Save as PDF" produces a clean
+     document, and keeps report sections from splitting across pages. */
+  @media print{
+    .topbar, .fb-actions, .back, .btn{ display:none !important; }
+    html,body{ background:#fff; }
+    main{ max-width:none; padding:0; }
+    .view{ display:none !important; }
+    .view.active{ display:block !important; }
+    .sec, .metric, .hero-score, .corr{ break-inside:avoid; page-break-inside:avoid;
+                                       box-shadow:none; }
+    .sec, .hero-score, .metric{ border:1px solid #d8dde2; }
+    .cols{ grid-template-columns:1fr 1fr; }
+    a[href]:after{ content:''; }
+  }
   @media (max-width:680px){ .cols{ grid-template-columns:1fr; } .delivery>div{ grid-template-columns:1fr; gap:3px; } }
 
   @media (max-width:680px){
@@ -164,10 +218,10 @@
 <body>
 <div class="topbar">
   <a class="brandlink" onclick="goToStart()" title="Back to start" aria-label="QFwork.ai — back to start">
-    <div class="logo">QF</div>
+    <img class="logo" src="logo-mark.png" alt="QFwork" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'logo logo-fallback',textContent:'QF'}))" />
     <div class="brand">QFwork<span>.ai</span></div>
   </a>
-  <div class="right">Live AI Interview</div>
+  <div class="right">AI Trainer for workplace communication</div>
 </div>
 
 <main>
@@ -175,7 +229,7 @@
   <!-- ════ HOME ════ -->
   <section id="home" class="view active">
     <p class="eyebrow">Live practice</p>
-    <h1 class="hero serif">Practice that talks&nbsp;back.</h1>
+    <h1 class="hero serif">AI Trainer for workplace&nbsp;communication</h1>
     <p class="lede">Have a real, face-to-face conversation with an AI partner — then get a full breakdown of your workplace English. Pick a scenario to begin.</p>
     <div class="grid" id="scnGrid"></div>
     <p class="home-foot">🎧 Headphones recommended · you'll be asked for camera &amp; microphone access.</p>
@@ -188,15 +242,59 @@
       <div class="pc-head"><div class="chip" id="pcIcon"></div><h2 id="pcTitle"></h2></div>
       <p class="pc-brief" id="pcBrief"></p>
 
+      <div id="pcBriefs" style="display:none;">
+        <label class="fld">Need a topic? Pick a brief <span>(or present anything you like)</span></label>
+        <div class="brief-chips" id="pcBriefChips"></div>
+      </div>
+
       <label class="fld" for="ctx">Add your background or a twist <span>(optional)</span></label>
       <textarea id="ctx" placeholder="e.g. I'm a nurse applying to a hospital in Hong Kong · or · I work in logistics and want to present a delivery-time project"></textarea>
       <p class="ex">Leave it blank and the AI will simply ask you at the start — either way the conversation adapts to you.</p>
 
-      <div class="devnote">🎥 Camera + microphone will turn on when the call starts.</div>
+      <div class="devnote">🎥 Next you'll check your camera and microphone. Your voice is recorded during the call and analysed for tone, pacing and clarity — it powers your feedback report and is discarded right after.</div>
       <button class="btn btn-primary" id="startBtn" onclick="startCall()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-        Start call
+        Set up camera &amp; mic
       </button>
+    </div>
+  </section>
+
+  <!-- ════ DEVICE CHECK ════
+       Runs entirely in the browser BEFORE any Tavus conversation exists.
+       Tavus bills from the moment a conversation is created, so all device
+       setup happens here where it costs nothing. ═══════════════════════ -->
+  <section id="devcheck" class="view">
+    <div class="pc pc-wide">
+      <button class="back" onclick="cancelDevCheck()">← Back</button>
+      <h2 class="dc-title">Check your camera and mic</h2>
+      <p class="pc-brief">Take as long as you need — the AI session hasn't started yet and no call time is being used.</p>
+
+      <div class="dc-preview">
+        <video id="dcVideo" autoplay playsinline muted></video>
+        <div class="dc-novid" id="dcNoVid">Camera off</div>
+      </div>
+
+      <div class="dc-meter-row">
+        <span class="dc-meter-label">Mic</span>
+        <div class="dc-meter"><div id="dcMeterFill"></div></div>
+        <span class="dc-meter-hint" id="dcMicHint">Say something…</span>
+      </div>
+
+      <div class="dc-selects">
+        <label class="fld" for="dcCam">Camera</label>
+        <select id="dcCam" onchange="switchDevices()"></select>
+        <label class="fld" for="dcMic">Microphone</label>
+        <select id="dcMic" onchange="switchDevices()"></select>
+      </div>
+
+      <div class="dc-status" id="dcStatus"></div>
+
+      <div class="devnote">🎧 Headphones recommended — they keep the AI's voice out of your recording.</div>
+      <button class="btn btn-primary" id="joinBtn" onclick="joinCall()" disabled>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        Join call
+      </button>
+      <p class="ex" style="text-align:center;">Your call time starts when you join.</p>
     </div>
   </section>
 
@@ -254,7 +352,13 @@ const ICONS = {
 const SCENARIOS = [
   { title:"Job Interview",         icon:'brief',   blurb:"Field your background, strengths and fit — for whatever role you're chasing." },
   { title:"Salary Negotiation",    icon:'money',   blurb:"You've got the offer. Negotiate the package with a manager who pushes back." },
-  { title:"Business Presentation", icon:'present', blurb:"Present a project, result or idea of your choice to a senior listener." },
+  { title:"Business Presentation", icon:'present',
+    blurb:"Hold the floor: brief a busy executive, present uninterrupted, then defend your points in Q&A.",
+    briefs:[
+      "Pitch a budget increase for your team to a sceptical executive",
+      "Present last quarter's results and what you'd change next quarter",
+      "Propose a new tool or process and make the business case"
+    ] },
   { title:"Client Meeting",        icon:'people',  blurb:"A first meeting with a prospective client or partner about working together." },
 ];
 
@@ -275,11 +379,82 @@ document.querySelectorAll('.scn').forEach(el =>
 );
 
 // ── view switching (class-based, robust) ──
-function show(id){ ['home','precall','room','busy','fb'].forEach(s => $(s).classList.toggle('active', s===id)); window.scrollTo(0,0); }
+function show(id){ ['home','precall','devcheck','room','busy','fb'].forEach(s => $(s).classList.toggle('active', s===id)); window.scrollTo(0,0); }
 function busy(text, sub){ $('busyText').textContent = text; $('busySub').textContent = sub || ''; show('busy'); }
 function goHome(){ show('home'); }
 // Brand/logo click → back to the starting screen, dropping any active call.
-function goToStart(){ stopTimer(); try { $('frame').src = 'about:blank'; } catch(e){} show('home'); }
+function goToStart(){ stopTimer(); abandonCall(); stopDevCheck(); try { $('frame').src = 'about:blank'; } catch(e){} show('home'); }
+
+// If a call is still running (user bailed out / closed the tab), tell the
+// server to end the Tavus conversation so it doesn't keep streaming+billing.
+function abandonCall(){
+  stopVoiceCapture();
+  stopDevCheck();
+  if (state.conversationId){
+    try { navigator.sendBeacon(`/api/abandon?conversationId=${encodeURIComponent(state.conversationId)}`); } catch(e){}
+    state.conversationId = null;
+  }
+}
+window.addEventListener('pagehide', abandonCall);
+
+// ── voice capture ─────────────────────────────────────────────
+// The Tavus iframe uses the mic for the conversation; we open a
+// SECOND stream on the same mic and record it as 16 kHz mono WAV,
+// which the server analyses for tone, intonation, pacing & clarity.
+// Echo cancellation strips most of the AI's voice from the speakers.
+let rec = null;
+async function startVoiceCapture(existingStream){
+  try{
+    // Reuse the stream from the device check when available, so the user is
+    // only ever asked for microphone permission once.
+    const stream = existingStream || await navigator.mediaDevices.getUserMedia({
+      audio: { channelCount:1, echoCancellation:true, noiseSuppression:true, autoGainControl:true }
+    });
+    const ctx = new AudioContext({ sampleRate: 16000 }); // browsers may ignore the hint — we read ctx.sampleRate back
+    await ctx.audioWorklet.addModule('pcm-worklet.js');
+    const node = new AudioWorkletNode(ctx, 'pcm-capture');
+    rec = { ctx, stream, node, chunks: [], total: 0, sampleRate: ctx.sampleRate, active: true };
+    const maxSamples = rec.sampleRate * 480; // safety cap: 8 minutes
+    node.port.onmessage = (e) => {
+      if (!rec || !rec.active || rec.total > maxSamples) return;
+      rec.chunks.push(e.data); rec.total += e.data.length;
+    };
+    ctx.createMediaStreamSource(stream).connect(node);
+    const sink = ctx.createGain(); sink.gain.value = 0;   // keep the graph pulling, silently
+    node.connect(sink); sink.connect(ctx.destination);
+  }catch(e){
+    console.warn('Voice capture unavailable (feedback will skip the audio analysis):', e);
+    rec = null;
+  }
+}
+function stopVoiceCapture(){
+  if (!rec) return null;
+  const r = rec; rec = null;
+  r.active = false;
+  try { r.node.disconnect(); } catch(e){}
+  try { r.stream.getTracks().forEach(t => t.stop()); } catch(e){}
+  try { r.ctx.close(); } catch(e){}
+  if (r.total < r.sampleRate * 3) return null;            // under ~3 s of audio → nothing to analyse
+  return encodeWav(r.chunks, r.total, r.sampleRate);
+}
+function encodeWav(chunks, total, sampleRate){
+  const buf = new ArrayBuffer(44 + total * 2);
+  const dv  = new DataView(buf);
+  const wstr = (off, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(off + i, s.charCodeAt(i)); };
+  wstr(0,'RIFF'); dv.setUint32(4, 36 + total * 2, true); wstr(8,'WAVE');
+  wstr(12,'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, sampleRate, true); dv.setUint32(28, sampleRate * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+  wstr(36,'data'); dv.setUint32(40, total * 2, true);
+  let off = 44;
+  for (const c of chunks){
+    for (let i = 0; i < c.length; i++){
+      const s = Math.max(-1, Math.min(1, c[i]));
+      dv.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      off += 2;
+    }
+  }
+  return new Blob([buf], { type: 'audio/wav' });
+}
 
 // ── precall ──
 let current = null;
@@ -290,19 +465,134 @@ function openPrecall(s){
   $('pcTitle').textContent = s.title;
   $('pcBrief').textContent = s.blurb;
   $('ctx').value = '';
+  // Scenario-specific topic briefs (currently: Business Presentation) —
+  // one click drops the brief into the context box, still fully editable.
+  if (Array.isArray(s.briefs) && s.briefs.length){
+    $('pcBriefChips').innerHTML = s.briefs.map((b,i) =>
+      `<button type="button" class="brief-chip" data-b="${i}">${b}</button>`).join('');
+    $('pcBriefChips').querySelectorAll('.brief-chip').forEach(el =>
+      el.addEventListener('click', () => {
+        $('ctx').value = s.briefs[+el.dataset.b];
+        $('pcBriefChips').querySelectorAll('.brief-chip').forEach(c => c.classList.toggle('sel', c === el));
+      }));
+    $('pcBriefs').style.display = '';
+  } else {
+    $('pcBriefs').style.display = 'none';
+  }
   show('precall');
 }
 
-// ── start the live Tavus call ──
+// ── device check (free) ─────────────────────────────────────
+// No Tavus conversation exists during this step, so the user can spend as
+// long as they like here. It also grants camera/mic permission up front,
+// which means the call itself joins with a single click.
+let dev = { stream:null, ctx:null, raf:null };
+
 async function startCall(){
+  state.userContext = $('ctx').value;
+  show('devcheck');
+  $('dcStatus').textContent = '';
+  $('joinBtn').disabled = true;
+  await openDevices();
+}
+
+async function openDevices(camId, micId){
+  stopDevCheck();
+  try{
+    dev.stream = await navigator.mediaDevices.getUserMedia({
+      video: camId ? { deviceId:{ exact:camId } } : true,
+      audio: { channelCount:1, echoCancellation:true, noiseSuppression:true, autoGainControl:true,
+               ...(micId ? { deviceId:{ exact:micId } } : {}) }
+    });
+  }catch(e){
+    $('dcStatus').textContent = 'Could not access your camera or microphone: ' + e.message +
+      '. Check the browser permission prompt, then reload the page.';
+    return;
+  }
+
+  $('dcVideo').srcObject = dev.stream;
+  $('dcNoVid').style.display = dev.stream.getVideoTracks().length ? 'none' : '';
+
+  // Populate the pickers (labels only become available after permission).
+  try{
+    const list = await navigator.mediaDevices.enumerateDevices();
+    fillSelect('dcCam', list.filter(d => d.kind === 'videoinput'),  dev.stream.getVideoTracks()[0]);
+    fillSelect('dcMic', list.filter(d => d.kind === 'audioinput'),  dev.stream.getAudioTracks()[0]);
+  }catch(e){ /* pickers are optional */ }
+
+  startMeter();
+  $('joinBtn').disabled = false;
+}
+
+function fillSelect(id, devices, activeTrack){
+  const sel = $(id);
+  const activeId = activeTrack && activeTrack.getSettings ? activeTrack.getSettings().deviceId : null;
+  sel.innerHTML = devices.map((d,i) =>
+    `<option value="${d.deviceId}"${d.deviceId===activeId?' selected':''}>${escapeHtml(d.label || (id==='dcCam'?'Camera ':'Microphone ')+(i+1))}</option>`
+  ).join('');
+}
+
+function switchDevices(){ openDevices($('dcCam').value || undefined, $('dcMic').value || undefined); }
+
+// Live input meter, so the user can confirm the mic actually works.
+function startMeter(){
+  const track = dev.stream.getAudioTracks()[0];
+  if(!track) return;
+  dev.ctx = new AudioContext();
+  const src = dev.ctx.createMediaStreamSource(dev.stream);
+  const an  = dev.ctx.createAnalyser();
+  an.fftSize = 512;
+  src.connect(an);
+  const buf = new Uint8Array(an.fftSize);
+  let peak = 0;
+  const tick = () => {
+    an.getByteTimeDomainData(buf);
+    let max = 0;
+    for(let i=0;i<buf.length;i++){ const v = Math.abs(buf[i]-128)/128; if(v>max) max=v; }
+    const pct = Math.min(100, Math.round(max*260));
+    $('dcMeterFill').style.width = pct + '%';
+    if(pct > 12 && peak <= 12){ peak = pct; $('dcMicHint').textContent = 'Mic is working'; $('dcMicHint').classList.add('ok'); }
+    dev.raf = requestAnimationFrame(tick);
+  };
+  tick();
+}
+
+function stopDevCheck(){
+  if(dev.raf) cancelAnimationFrame(dev.raf);
+  if(dev.ctx) { try{ dev.ctx.close(); }catch(e){} }
+  if(dev.stream) dev.stream.getTracks().forEach(t => t.stop());
+  dev = { stream:null, ctx:null, raf:null };
+  $('dcMeterFill').style.width = '0%';
+  $('dcMicHint').textContent = 'Say something…';
+  $('dcMicHint').classList.remove('ok');
+}
+
+function cancelDevCheck(){ stopDevCheck(); show('precall'); }
+
+// ── join: this is the point at which Tavus starts billing ──
+async function joinCall(){
+  $('joinBtn').disabled = true;
+  // Release the camera preview (the call opens its own video stream) but keep
+  // the microphone stream, which the recorder reuses — so the browser does not
+  // prompt for microphone access a second time.
+  let micStream = null;
+  if(dev.stream){
+    dev.stream.getVideoTracks().forEach(t => t.stop());
+    const audio = dev.stream.getAudioTracks();
+    if(audio.length) micStream = new MediaStream(audio);
+  }
+  if(dev.raf) cancelAnimationFrame(dev.raf);
+  if(dev.ctx){ try{ dev.ctx.close(); }catch(e){} }
+  dev = { stream:null, ctx:null, raf:null };
+
   busy('Setting up your AI partner…', 'Connecting to the video room');
   try{
     const r = await fetch('/api/conversation', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ scenarioTitle: state.scenarioTitle, userContext: $('ctx').value })
+      body: JSON.stringify({ scenarioTitle: state.scenarioTitle, userContext: state.userContext || '' })
     });
     const data = await r.json();
-    if(!r.ok) throw new Error(data.error || 'Could not start the interview.');
+    if(!r.ok) throw new Error(data.error || 'Could not start the session.');
 
     state.conversationId = data.conversationId;
     state.scenarioPrompt = data.scenarioPrompt || '';
@@ -312,7 +602,11 @@ async function startCall(){
     $('frame').src = data.conversationUrl;
     startTimer();
     show('room');
-  }catch(e){ showError(e.message); }
+    startVoiceCapture(micStream);   // records tone / pacing / clarity
+  }catch(e){
+    if(micStream) micStream.getTracks().forEach(t => t.stop());
+    showError(e.message);
+  }
 }
 
 // ── timer ──
@@ -337,12 +631,26 @@ function renderTime(){
   $('timebar').classList.toggle('crit', rem <= 30);
 }
 
-// ── end → transcript → feedback ──
+// ── end → voice upload → transcript → feedback ──
 async function endCall(){
+  if (state.ending) return;                 // ignore double-clicks / timer race
+  if (!state.conversationId) return goHome();
+  state.ending = true;
+  $('endBtn').disabled = true;
   stopTimer();
+  const wav = stopVoiceCapture();           // grab the recording BEFORE tearing anything down
   $('frame').src = 'about:blank';
-  busy('Analysing your workplace English…', 'Fetching the transcript — this can take up to ~20 seconds');
+  busy('Analysing your workplace English…', 'Transcript, voice audio and camera observations — this can take up to a minute');
   try{
+    // 1) ship the mic recording for the tone/pacing/clarity analysis (best-effort)
+    if (wav){
+      try{
+        await fetch(`/api/voice-sample/${encodeURIComponent(state.conversationId)}`, {
+          method:'POST', headers:{'Content-Type':'audio/wav'}, body: wav
+        });
+      }catch(e){ console.warn('Voice upload failed — continuing without audio analysis:', e); }
+    }
+    // 2) request the full feedback report
     const r = await fetch('/api/interview-feedback', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -353,8 +661,10 @@ async function endCall(){
     });
     const data = await r.json();
     if(!r.ok) throw new Error(data.error || 'Could not generate feedback.');
-    renderFeedback(data.feedback);
+    state.conversationId = null;            // call fully finished — nothing to abandon
+    renderFeedback(data.feedback, data.voiceStats);
   }catch(e){ showError(e.message); }
+  finally{ state.ending = false; $('endBtn').disabled = false; }
 }
 
 function showError(msg){
@@ -373,10 +683,20 @@ function band(score){
   return            { label:'Needs work',  color:'#dc2626' };
 }
 
-function renderFeedback(f){
+function renderFeedback(f, voiceStats){
   if(!f) return showError('Empty feedback.');
   const sc = f.scores || {}, da = f.deliveryAnalysis || {};
+  const va = f.voiceAnalysis || {};
+  const hasVoice = !!(va.toneIntonation || va.pacing || va.clarityPronunciation || va.vocalEnergy);
   const b  = band(f.overallScore || 0);
+  const vchips = hasVoice && voiceStats ? [
+    voiceStats.wpm                       ? chip(voiceStats.wpm, 'words / min')                                  : '',
+    voiceStats.pitchVariabilitySt != null ? chip(voiceStats.pitchVariabilitySt + ' st', 'pitch variation')      : '',
+    voiceStats.hesitationsPerMin  != null ? chip(voiceStats.hesitationsPerMin + '/min', 'hesitation pauses')    : '',
+    voiceStats.clarityScore              ? chip(voiceStats.clarityScore + '/100', 'clarity')                    : '',
+    voiceStats.intonationLabel           ? chip(voiceStats.intonationLabel, 'intonation')                       : '',
+    voiceStats.energyLabel               ? chip(voiceStats.energyLabel, 'vocal energy')                         : ''
+  ].filter(Boolean).join('') : '';
   const corr = (f.sentenceCorrections||[]).map(c => `
     <div class="corr">
       <div class="o"><span class="tag">Said</span>“${escapeHtml(c.original)}”</div>
@@ -410,17 +730,113 @@ function renderFeedback(f){
       <div class="sec warn-sec"><h3>What to improve</h3><ul>${(f.improvements||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ul></div>
     </div>
     ${corr ? `<div class="sec"><h3>Line-by-line polish</h3>${corr}</div>` : ''}
-    <div class="sec"><h3>Delivery</h3><div class="delivery">
+    ${hasVoice ? `<div class="sec voice-sec"><h3>Voice &amp; delivery — measured from your audio</h3>
+      ${vchips ? `<div class="vchips">${vchips}</div>` : ''}
+      <div class="delivery">
+        ${va.toneIntonation ? `<div><b>Tone &amp; intonation</b><span>${escapeHtml(va.toneIntonation)}</span></div>` : ''}
+        ${va.pacing ? `<div><b>Pacing &amp; pauses</b><span>${escapeHtml(va.pacing)}</span></div>` : ''}
+        ${va.clarityPronunciation ? `<div><b>Clarity &amp; pronunciation</b><span>${escapeHtml(va.clarityPronunciation)}</span></div>` : ''}
+        ${va.vocalEnergy ? `<div><b>Vocal energy</b><span>${escapeHtml(va.vocalEnergy)}</span></div>` : ''}
+      </div>
+      <p class="foot" style="margin-top:9px;">Measured directly from your recorded voice — pitch contour, loudness dynamics and speech timing — not guessed from text.</p>
+    </div>` : ''}
+    <div class="sec"><h3>Language delivery — from the transcript</h3><div class="delivery">
       <div><b>Filler words</b><span>${escapeHtml(da.fillerWords||'—')}</span></div>
       <div><b>Hesitation</b><span>${escapeHtml(da.hesitationAndStutter||'—')}</span></div>
       <div><b>Confidence markers</b><span>${escapeHtml(da.confidenceMarkers||'—')}</span></div>
       <div><b>Pacing &amp; flow</b><span>${escapeHtml(da.pacingFlow||'—')}</span></div>
     </div></div>
     ${f.rewrittenResponse ? `<div class="sec model-sec"><h3>Model answer</h3><div class="model">${escapeHtml(f.rewrittenResponse)}</div></div>` : ''}
-    <p class="foot">Feedback is generated from a text transcript of the conversation, so delivery notes are inferred from word patterns (fillers, hesitation, hedging) — not from your actual voice tone.</p>
-    <div class="fb-actions"><button class="btn btn-primary" style="width:auto;" onclick="location.reload()">Practise again</button></div>
+    <p class="foot">${hasVoice
+      ? 'This report combines the conversation transcript, real acoustic analysis of your recorded voice (pitch, pacing, clarity, energy) and live camera observations.'
+      : 'Voice audio wasn’t captured for this call, so delivery notes are inferred from the transcript’s word patterns. Allow microphone access on this page to unlock measured tone, pacing and clarity feedback.'}</p>
+    <div class="fb-actions">
+      <button class="btn btn-primary" style="width:auto;" onclick="location.reload()">Practise again</button>
+      <button class="btn btn-secondary" onclick="downloadReport()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        Download report
+      </button>
+      <button class="btn btn-secondary" onclick="window.print()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+        Print / Save as PDF
+      </button>
+      <span class="fb-saved" id="fbSaved" hidden>Saved to your device</span>
+    </div>
   `;
   show('fb');
+}
+
+// ── export the report as a self-contained HTML file ──
+// Everything (styles, logo) is inlined so the saved file opens offline on any
+// device, and can be printed to PDF from there. No third-party library.
+function downloadReport(){
+  const report = $('fb').cloneNode(true);
+  report.querySelectorAll('.fb-actions').forEach(el => el.remove());
+
+  // Re-encode the logo already displayed in the header rather than re-fetching
+  // it, so the export never depends on the network being available. Drawn at
+  // 2x so it stays crisp when the saved file is printed.
+  let logoTag = '';
+  try{
+    const mark = document.querySelector('.topbar img.logo');
+    if(mark && mark.complete && mark.naturalWidth){
+      const c = document.createElement('canvas');
+      c.width = c.height = 68;
+      c.getContext('2d').drawImage(mark, 0, 0, 68, 68);
+      logoTag = `<img src="${c.toDataURL('image/png')}" alt="" width="34" height="34" style="display:block" />`;
+    }
+  }catch(e){ /* the report is still complete without the mark */ }
+
+  const scenario = state.scenarioTitle || 'Practice session';
+  const now = new Date();
+  const stamp = now.toLocaleString(undefined, { dateStyle:'long', timeStyle:'short' });
+  const css = Array.from(document.querySelectorAll('style')).map(s => s.textContent).join('\n');
+
+  const doc = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QFwork.ai feedback — ${escapeHtml(scenario)}</title>
+<style>
+${css}
+body{ background:#fff; }
+.export-wrap{ max-width:980px; margin:0 auto; padding:40px 22px 64px; }
+.export-head{ display:flex; align-items:center; gap:11px; padding-bottom:16px; margin-bottom:26px;
+              border-bottom:1px solid var(--line); }
+.export-head .name{ font-weight:700; font-size:16px; letter-spacing:-.01em; }
+.export-head .name span{ color:var(--teal); }
+.export-head .meta{ margin-left:auto; text-align:right; font-size:12.5px; color:var(--mut); line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="export-wrap">
+  <div class="export-head">
+    ${logoTag}
+    <div class="name">QFwork<span>.ai</span></div>
+    <div class="meta"><strong>${escapeHtml(scenario)}</strong><br />${escapeHtml(stamp)}</div>
+  </div>
+  ${report.innerHTML}
+</div>
+</body>
+</html>`;
+
+  const slug = scenario.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
+  const date = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const url  = URL.createObjectURL(new Blob([doc], { type:'text/html;charset=utf-8' }));
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `QFwork-feedback-${slug}-${date}.html`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+  const saved = $('fbSaved');
+  if(saved){ saved.hidden = false; setTimeout(() => { saved.hidden = true; }, 4000); }
+}
+function chip(v, label){
+  return `<span class="vchip"><b>${escapeHtml(String(v))}</b>${escapeHtml(label)}</span>`;
 }
 function metric(label,v){
   const has = (v ?? null) !== null;
@@ -464,7 +880,16 @@ if (new URLSearchParams(location.search).get('demo') === 'feedback') {
       confidenceMarkers: "Frequent hedging: \"I guess\", \"maybe\", \"sort of\". These soften otherwise strong points.",
       pacingFlow: "You spoke around 240 words across 5 answers (~48 words each) in a 4-minute conversation — a comfortable, measured pace that filled the time well without rushing. A couple of answers ran long; tightening those would sharpen your impact."
     },
+    voiceAnalysis: {
+      toneIntonation: "Your pitch varied by only 1.4 semitones on average — on the flat side for an interview, which can read as low energy even when your content is strong. Practise stressing the single most important word in each sentence; your range (4.2 semitones) shows you can do it when you choose to.",
+      pacing: "You articulated at about 138 words per minute — right in the comfortable professional band — but paused mid-sentence roughly 7 times per minute of speech (average 0.6 s). Most clustered around the weakness question; a slow breath before answering would replace several of those hesitations.",
+      clarityPronunciation: "Articulation clarity measured 81/100 — clear. The recogniser only struggled briefly when you sped up near the end of long answers, so keep your closing sentences at the same pace as your openings.",
+      vocalEnergy: "Loudness stayed within a fairly narrow 5.8 dB band — steady and composed, though a touch more projection on your key achievements would help them land."
+    },
     rewrittenResponse: "Thanks for having me. I've spent the last three years in customer operations, where I led a team of four and owned our support metrics. Last year I redesigned our triage process, which cut average response time by 30% and lifted satisfaction scores from 82% to 91%. I'm drawn to this role because it combines that operational focus with a stronger analytics component, which is exactly where I want to grow. One area I'm actively working on is delegation — I used to absorb too much myself, so I've started setting clear ownership upfront, and it's made my team noticeably more autonomous."
+  }, {
+    wpm: 138, pitchVariabilitySt: 1.4, hesitationsPerMin: 7.1, clarityScore: 81,
+    intonationLabel: 'somewhat flat', energyLabel: 'moderate variation'
   });
 }
 </script>

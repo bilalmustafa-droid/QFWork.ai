@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QFwork.ai — What's your English worth?</title>
+  <title>QFwork.ai — AI Trainer for Workplace Communication</title>
+  <link rel="icon" href="logo-mark.png" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,7 +51,9 @@
       border-bottom:1px solid var(--line);position:sticky;top:0;z-index:200;
     }
     .logo{display:flex;align-items:center;gap:12px;cursor:pointer;}
-    .logo-badge{width:38px;height:38px;background:var(--orange);border-radius:11px;display:flex;
+    .logo-badge{width:40px;height:40px;object-fit:contain;display:block;flex:none;}
+    /* Shown only if the logo image is missing, so the header never breaks. */
+    .logo-badge-fallback{background:var(--orange);border-radius:11px;display:flex;
       align-items:center;justify-content:center;font-family:var(--serif);font-size:15px;font-weight:700;
       color:#fff;letter-spacing:-.5px;box-shadow:0 4px 12px rgba(232,114,42,.32);}
     .logo-name{font-family:var(--serif);font-size:22px;font-weight:600;color:var(--ink);letter-spacing:-.3px;}
@@ -317,10 +320,10 @@
 
   <header class="header">
     <div class="logo" onclick="showScreen('homeScreen')">
-      <div class="logo-badge">QF</div>
+      <img class="logo-badge" src="logo-mark.png" alt="QFwork" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'logo-badge logo-badge-fallback',textContent:'QF'}))" />
       <span class="logo-name">QFwork<span>.ai</span></span>
     </div>
-    <div class="live-badge"><span class="live-dot"></span> AI Coach Ready</div>
+    <div class="live-badge"><span class="live-dot"></span> AI Trainer for workplace communication</div>
   </header>
 
   <div class="toast" id="toast"></div>

@@ -1,19 +1,22 @@
 {
-  "name": "qfwork-live",
+  "name": "qfwork",
   "version": "1.0.0",
-  "description": "QFwork.ai — live AI interview practice (OpenAI Realtime, server-relayed) + Groq feedback engine",
+  "description": "AI trainer for workplace communication - live practice conversations with automated language, voice and presence feedback",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "setup": "node setup-tavus.js",
+    "check": "node check-tavus.js"
   },
   "engines": {
     "node": ">=18"
   },
+  "license": "UNLICENSED",
+  "private": true,
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
-    "node-fetch": "^2.7.0",
-    "ws": "^8.18.0"
+    "node-fetch": "^2.7.0"
   }
 }

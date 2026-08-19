@@ -2,16 +2,17 @@
 // PCM capture worklet
 // ------------------------------------------------------------
 // Runs inside the AudioWorkletGlobalScope at the AudioContext's
-// sample rate (we create the context at 24 kHz, the rate OpenAI
-// Realtime expects). It accumulates mono float samples and posts
-// ~100 ms chunks back to the main thread, which converts them to
-// PCM16 + base64 and ships them over the WebSocket.
+// sample rate. Accumulates mono float samples and posts them to
+// the main thread in fixed-size blocks, which the page assembles
+// into a WAV file for the voice analysis.
 // ============================================================
 class PCMCapture extends AudioWorkletProcessor {
   constructor() {
     super();
     this._buf = [];
-    this._target = 2400; // 100 ms @ 24 kHz
+    // Block size in samples. At 16 kHz this is ~150 ms per message,
+    // which keeps main-thread messaging light during a long call.
+    this._target = 2400;
   }
 
   process(inputs) {

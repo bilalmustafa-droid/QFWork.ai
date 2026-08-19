@@ -38,7 +38,7 @@ async function fetchResilient(url, opts = {}, { timeout = 20000, retries = 2 } =
       lastErr = e;
       const transient = /ENOTFOUND|EAI_AGAIN|ECONNRESET|ETIMEDOUT|abort|network|socket/i.test(e.message || '');
       if (i < retries && transient) {
-        console.log(`↻  Network blip (${e.message}) — retry ${i + 1}/${retries}…`);
+        console.log(`[tavus] network error (${e.message}), retry ${i + 1}/${retries}`);
         await new Promise(r => setTimeout(r, 800 * (i + 1)));
         continue;
       }
@@ -49,12 +49,22 @@ async function fetchResilient(url, opts = {}, { timeout = 20000, retries = 2 } =
 }
 
 // Start a real-time video conversation with the interviewer replica.
-async function createConversation({ conversationName, conversationalContext, customGreeting, callbackUrl }) {
+// `personaId` (optional) lets a scenario use its own persona — e.g. the
+// patient "presentation executive" — instead of the default interviewer.
+async function createConversation({ conversationName, conversationalContext, customGreeting, callbackUrl, personaId }) {
   if (!process.env.TAVUS_API_KEY)    throw new Error('TAVUS_API_KEY is not set on the server.');
   if (!process.env.TAVUS_REPLICA_ID) throw new Error('TAVUS_REPLICA_ID is not set (pick a stock replica in the Tavus dashboard).');
 
   // Hard per-call cap (seconds) — the single best guard against runaway billing.
   const maxSeconds = parseInt(process.env.TAVUS_MAX_CALL_SECONDS || '300', 10);
+
+  // Tavus bills from the moment a conversation is created, because the replica
+  // immediately starts waiting in the room — not from when the user joins.
+  // The client therefore creates the conversation only once the user has
+  // finished choosing their camera and microphone; these two timeouts cap the
+  // remaining exposure if they still never arrive or leave the tab open.
+  const absentTimeout = parseInt(process.env.TAVUS_ABSENT_TIMEOUT || '90', 10);
+  const leftTimeout   = parseInt(process.env.TAVUS_LEFT_TIMEOUT   || '15', 10);
 
   const body = {
     replica_id: process.env.TAVUS_REPLICA_ID,
@@ -62,12 +72,15 @@ async function createConversation({ conversationName, conversationalContext, cus
     conversational_context: conversationalContext || '',
     custom_greeting: customGreeting || '',
     properties: {
-      max_call_duration: maxSeconds
+      max_call_duration:         maxSeconds,
+      participant_absent_timeout: absentTimeout,
+      participant_left_timeout:   leftTimeout
     }
   };
   // persona_id is OPTIONAL — Tavus falls back to a default persona if omitted.
-  // Our richer "QFwork Interviewer" persona (from setup-tavus.js) is preferred when set.
-  if (process.env.TAVUS_PERSONA_ID) body.persona_id = process.env.TAVUS_PERSONA_ID;
+  // Priority: explicit per-scenario persona → default QFwork Interviewer.
+  const usePersona = personaId || process.env.TAVUS_PERSONA_ID;
+  if (usePersona) body.persona_id = usePersona;
   if (callbackUrl) body.callback_url = callbackUrl;
 
   const r = await fetchResilient(`${TAVUS_BASE}/conversations`, {
@@ -90,8 +103,15 @@ async function getConversationTranscript(conversationId) {
 // (facial expression, eye contact, body language, emotional state).
 function extractPerception(data) {
   const events = Array.isArray(data.events) ? data.events : [];
-  const pa = events.find(e => (e.event_type || '') === 'application.perception_analysis');
-  return (pa && pa.properties && pa.properties.analysis) ? String(pa.properties.analysis).trim() : '';
+  // Tolerate event-name changes between raven-0 / raven-1: match any event
+  // whose type mentions "perception" and carries an analysis/summary string.
+  let pa = events.find(e => /perception/i.test(e.event_type || '') &&
+                            e.properties && (e.properties.analysis || e.properties.summary));
+  // Last-resort fallback: any event with a non-trivial analysis string.
+  if (!pa) pa = events.find(e => e.properties && typeof e.properties.analysis === 'string'
+                                 && e.properties.analysis.trim().length > 20);
+  if (!pa) return '';
+  return String(pa.properties.analysis || pa.properties.summary).trim();
 }
 
 // The exact location of the transcript in Tavus's payload can vary by
@@ -153,4 +173,53 @@ async function endConversation(conversationId) {
   } catch (_) { /* best-effort */ }
 }
 
-module.exports = { createConversation, getConversationTranscript, endConversation, extractTranscript };
+// ============================================================
+// Perception self-heal
+// ------------------------------------------------------------
+// The on-camera "presence" feedback depends on the persona having a
+// PERCEPTION layer (Raven vision): without it Tavus never emits the
+// application.perception_analysis event and the presence section of
+// the report stays empty. Dashboard-created personas often lack it,
+// so at boot we check the configured persona and PATCH the layer in
+// (raven-1 + our end-of-call analysis queries) if it's missing.
+// ============================================================
+const PERCEPTION_ANALYSIS_QUERIES = [
+  "Eye contact: Did the candidate maintain steady, direct eye contact with the camera, or did they frequently look away, down, or around? Describe how their eye contact changed across the conversation.",
+  "Facial expression: What expressions did the candidate show while speaking and listening — engaged and animated, neutral and flat, tense or anxious, or warm and smiling? Note changes at key moments.",
+  "Body language: Describe the candidate's posture and body language — upright and composed, relaxed, stiff, slouching, leaning, or fidgeting. Note any repeated or distracting gestures, and whether their hands/movements supported or undercut their message.",
+  "Confidence and composure: Overall, did the candidate appear confident and at ease on camera, or visibly nervous and uncomfortable? Cite the specific visual signals you based this on.",
+  "Engagement: How engaged and present did the candidate seem throughout — actively listening and reacting to the interviewer, or distracted, disengaged, or looking elsewhere?"
+];
+
+async function ensurePerceptionLayer(personaId = process.env.TAVUS_PERSONA_ID) {
+  if (!process.env.TAVUS_API_KEY) return { ok: false, reason: 'TAVUS_API_KEY not set' };
+  if (!personaId) return { ok: false, reason: 'persona id not set — default persona has no custom perception queries' };
+
+  const r = await fetchResilient(`${TAVUS_BASE}/personas/${personaId}`, { headers: headers() });
+  if (!r.ok) return { ok: false, reason: `could not fetch persona (${r.status}): ${(await r.text()).slice(0, 200)}` };
+  const persona = await r.json();
+
+  const layer = persona.layers && persona.layers.perception;
+  const model = layer && layer.perception_model;
+  const hasQueries = layer && Array.isArray(layer.perception_analysis_queries) && layer.perception_analysis_queries.length > 0;
+  if (model && model !== 'off' && hasQueries) {
+    return { ok: true, patched: false, model };
+  }
+
+  // JSON Patch: "add" both creates the member and replaces an incomplete one.
+  const patch = [{
+    op: 'add',
+    path: '/layers/perception',
+    value: {
+      perception_model: 'raven-1',
+      perception_analysis_queries: PERCEPTION_ANALYSIS_QUERIES
+    }
+  }];
+  const pr = await fetchResilient(`${TAVUS_BASE}/personas/${personaId}`, {
+    method: 'PATCH', headers: headers(), body: JSON.stringify(patch)
+  });
+  if (!pr.ok) return { ok: false, reason: `PATCH failed (${pr.status}): ${(await pr.text()).slice(0, 300)}` };
+  return { ok: true, patched: true, model: 'raven-1' };
+}
+
+module.exports = { createConversation, getConversationTranscript, endConversation, extractTranscript, ensurePerceptionLayer };
