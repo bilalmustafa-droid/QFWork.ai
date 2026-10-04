@@ -1,0 +1,19 @@
+<!-- PLACEHOLDER — replace with a real photo at public/img/showcase-3.jpg
+     and change the <img src> in exam.html / index.html to match. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" role="img" aria-label="Placeholder image">
+  <defs>
+    <linearGradient id="g3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#eef3f7"/>
+      <stop offset="100%" stop-color="#dde6ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#g3)"/>
+  <rect x="14" y="14" width="772" height="472" rx="10" fill="none" stroke="#475467" stroke-opacity=".26" stroke-width="2" stroke-dasharray="10 9"/>
+  <g transform="translate(400 214)" fill="none" stroke="#475467" stroke-opacity=".55" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 44v-8a15 15 0 0 0-15-15h-30a15 15 0 0 0-15 15v8"/>
+    <circle cx="-12" cy="-9" r="15"/>
+    <path d="M42 44v-8a15 15 0 0 0-11-14M25 -35a15 15 0 0 1 0 29"/>
+  </g>
+  <text x="400" y="316" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="27" font-weight="600" fill="#344054">Expert review, one-to-one</text>
+  <text x="400" y="352" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="19" fill="#475467" fill-opacity=".72">Placeholder 3 — drop your photo in /public/img/</text>
+</svg>

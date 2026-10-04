@@ -16,6 +16,11 @@ node_modules/
 .DS_Store
 Thumbs.db
 
+# Which one-time trial codes have been spent. Runtime state, not config —
+# the issued list itself lives in ACCESS_CODES_TRIAL.
+trial-codes-used.json
+trial-codes-used.json.tmp
+
 # Logs
 *.log
 npm-debug.log*

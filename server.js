@@ -1,6 +1,8 @@
 // ============================================================
 // QFwork.ai — Backend Server
 // ------------------------------------------------------------
+//  • POST /api/access               → exchange an access code for a trial session
+//  • GET  /api/access/verify        → is this trial session still alive?
 //  • POST /api/analyze              → text practice → feedback report
 //  • POST /api/conversation         → start a live Tavus video session
 //  • POST /api/voice-sample/:id     → receive the mic recording (WAV) for voice analysis
@@ -9,6 +11,10 @@
 //
 //  API credentials are read from the environment here on the server and
 //  are never exposed to the browser.
+//
+//  Everything that spends money — /api/analyze, /api/conversation and
+//  /api/interview-feedback — requires a trial session from /api/access.
+//  See access.js.
 // ============================================================
 
 const express = require('express');
@@ -19,6 +25,7 @@ require('dotenv').config();
 const { generateFeedback } = require('./feedback');
 const { analyzeVoice }     = require('./voice-metrics');
 const { createConversation, getConversationTranscript, endConversation, ensurePerceptionLayer } = require('./tavus');
+const access = require('./access');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -28,10 +35,80 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 app.use(express.json());
 app.use(cors());
 
+// Railway and friends sit in front of us; without this every request looks
+// like it came from the proxy and the access-code rate limit becomes global.
+app.set('trust proxy', 1);
+
 // Make the live interview the front door.
 app.get('/', (req, res) => res.redirect('/exam.html'));
 
 app.use(express.static('public'));
+
+
+// ============================================================
+// ACCESS GATE
+// ------------------------------------------------------------
+// POST /api/access        body: { code }
+//   → { ok, token, tier, runsLeft, calendlyUrl }
+// GET  /api/access/verify header: X-QF-Access
+//   → { ok, tier, runsLeft, calendlyUrl }
+//
+// The tier decides how much of the report the visitor sees and how many
+// calls they get. A one-time code additionally carries its own run counter,
+// so a spent code is refused here rather than at the first call; see access.js.
+// ============================================================
+app.post('/api/access', (req, res) => {
+  if (!access.isConfigured()) {
+    return res.status(503).json({ error: 'The trial is not accepting codes right now. Please contact us for access.' });
+  }
+  if (access.tooManyAttempts(req.ip)) {
+    return res.status(429).json({ error: 'Too many attempts. Please wait a minute and try again.' });
+  }
+  const match = access.checkCode(req.body && req.body.code);
+  if (!match) {
+    return res.status(401).json({ error: "That code isn't valid. Check it and try again, or contact us for access." });
+  }
+  // Recognising the code proves this is not a guessing loop, so the attempt
+  // counter is cleared even when the code turns out to be spent. Without this,
+  // someone re-entering their own used code a few times would hit the rate
+  // limiter and get "too many attempts" instead of the message that explains
+  // what actually happened.
+  access.clearAttempts(req.ip);
+
+  // A one-time code with nothing left. The booking link travels with the
+  // refusal so the dead end still leads somewhere.
+  if (access.trialSpent(match.code)) {
+    console.log('[access] one-time code already spent');
+    return res.status(403).json({
+      error: 'This code has already been used. Book a free review with one of our recruitment experts to go further.',
+      code:  'trial-spent',
+      calendlyUrl: process.env.CALENDLY_URL || ''
+    });
+  }
+
+  const token   = access.openSession(match.tier, match.code);
+  const session = access.getSession(token);
+  console.log(`[access] ${match.tier} session opened${match.code ? ' (one-time code)' : ''}`);
+  return res.status(200).json({
+    ok: true,
+    token,
+    tier: match.tier,
+    runsLeft:    access.runsLeft(session),
+    calendlyUrl: process.env.CALENDLY_URL || ''
+  });
+});
+
+app.get('/api/access/verify', (req, res) => {
+  const token   = req.get('X-QF-Access') || req.query.accessToken;
+  const session = access.getSession(token);
+  if (!session) return res.status(401).json({ ok: false });
+  return res.status(200).json({
+    ok: true,
+    tier:        session.tier,
+    runsLeft:    access.runsLeft(session),
+    calendlyUrl: process.env.CALENDLY_URL || ''
+  });
+});
 
 
 // ============================================================
@@ -73,6 +150,7 @@ const INTERVIEW_SCENARIOS = {
 // POST /api/analyze  — original text-practice feedback
 // ============================================================
 app.post('/api/analyze', async (req, res) => {
+  if (!access.requireSession(req, res)) return;
   const { transcript, scenarioTitle, scenarioPrompt } = req.body;
   if (!transcript || !scenarioTitle) {
     return res.status(400).json({ error: 'Missing transcript or scenario.' });
@@ -94,10 +172,22 @@ app.post('/api/analyze', async (req, res) => {
 //   returns: { conversationId, conversationUrl, scenarioPrompt }
 // ============================================================
 app.post('/api/conversation', async (req, res) => {
+  const session = access.requireSession(req, res);
+  if (!session) return;
   const { scenarioTitle, userContext } = req.body;
   const scenario = INTERVIEW_SCENARIOS[scenarioTitle];
   if (!scenario) {
     return res.status(400).json({ error: `Unknown scenario: ${scenarioTitle}` });
+  }
+  // This is the moment Tavus starts billing, so it is also the moment the
+  // trial run is charged. Doing it here (not in the browser) means a page
+  // reload cannot hand someone a fresh set of runs.
+  const charged = access.consumeRun(session);
+  if (!charged.ok) {
+    return res.status(403).json({
+      error: "You've used your trial session. Book a free review with one of our recruitment experts to go further.",
+      code:  'trial-spent'
+    });
   }
   // Optionally tailor the role-play to whatever the user told us about themselves.
   let context = scenario.context;
@@ -107,21 +197,29 @@ app.post('/api/conversation', async (req, res) => {
   // Scenario-specific persona (e.g. the patient presentation executive).
   // Falls back to the default interviewer persona if the env var isn't set.
   const personaId = scenario.personaIdEnv ? (process.env[scenario.personaIdEnv] || undefined) : undefined;
+  // Per-call time limit for this session's tier — demos get their own, longer
+  // cap; the sales tier keeps the shared 5 minutes.
+  const maxSeconds = access.callSeconds(session.tier);
   try {
     const convo = await createConversation({
       conversationName:      `QFwork — ${scenarioTitle}`,
       conversationalContext: context,
       customGreeting:        scenario.greeting,
       callbackUrl:           process.env.TAVUS_CALLBACK_URL || undefined,
-      personaId
+      personaId,
+      maxSeconds
     });
     return res.status(200).json({
       conversationId:  convo.conversation_id,
       conversationUrl: convo.conversation_url,
       scenarioPrompt:  scenario.prompt,
-      maxSeconds:      parseInt(process.env.TAVUS_MAX_CALL_SECONDS || '300', 10)
+      maxSeconds,
+      runsLeft:        charged.runsLeft
     });
   } catch (error) {
+    // The call never started, so nothing was billed — give the run back
+    // rather than burning a prospect's only try on our own outage.
+    session.runs = Math.max(0, session.runs - 1);
     console.error('Create conversation error:', error.message);
     return res.status(502).json({ error: error.message });
   }
@@ -178,6 +276,8 @@ app.post('/api/abandon', async (req, res) => {
 //   body: { conversationId, scenarioTitle }
 // ============================================================
 app.post('/api/interview-feedback', async (req, res) => {
+  const session = access.requireSession(req, res);
+  if (!session) return;
   const { conversationId, scenarioTitle, durationSeconds } = req.body;
   const scenario = INTERVIEW_SCENARIOS[scenarioTitle];
   if (!conversationId || !scenario) {
@@ -264,9 +364,18 @@ app.post('/api/interview-feedback', async (req, res) => {
       voiceMetrics
     });
     console.log(`[feedback] fields - presence: ${feedback.presenceFeedback ? `yes (${feedback.presenceFeedback.length} chars)` : 'EMPTY'}, presencePoints: ${Array.isArray(feedback.presencePoints) ? feedback.presencePoints.filter(Boolean).length : 0}, voice: ${feedback.voiceAnalysis?.toneIntonation ? 'yes' : 'EMPTY'}, pacing: ${feedback.deliveryAnalysis?.pacingFlow ? 'yes' : 'EMPTY'}`);
+
+    // On the sales tier the deep coaching sections are stripped out here, so
+    // they never reach the browser at all — the client shows a locked card and
+    // a link to book the expert review.
+    const gated = access.redactForTier(feedback, session.tier);
+    if (gated.locked.length) console.log(`[access] sales tier — withheld: ${gated.locked.join(', ')}`);
+
     return res.status(200).json({
-      feedback,
-      dialogue: result.dialogue,
+      feedback:   gated.feedback,
+      tier:       session.tier,
+      locked:     gated.locked,
+      dialogue:   session.tier === 'sales' ? '' : result.dialogue,
       voiceStats: voiceMetrics ? voiceMetrics.uiStats : null
     });
   } catch (error) {
@@ -287,6 +396,25 @@ server.listen(PORT, () => {
   console.log(`  Groq   : ${state(!!process.env.GROQ_API_KEY)}  (feedback report, speech-to-text)`);
   console.log(`  Tavus  : ${state(!!process.env.TAVUS_API_KEY)}  (live conversational video)`);
   console.log(`  Static : serving /public`);
+
+  // The access gate is the only thing standing between a public URL and our
+  // Tavus/Groq bill, so make its state loud at boot.
+  const mmss = (sec) => `${Math.floor(sec / 60)}m${sec % 60 ? ` ${sec % 60}s` : ''}`;
+  const cap = (t) => `${access.runCap(t) === access.UNLIMITED ? 'unlimited runs' : `${access.runCap(t)} run(s)`}, ${mmss(access.callSeconds(t))}/call`;
+  if (access.isConfigured()) {
+    console.log(`  Access : demo code ${state(!!process.env.ACCESS_CODE_DEMO)} (${cap('demo')})  ·  sales code ${state(!!process.env.ACCESS_CODE_SALES)} (${cap('sales')})`);
+    const t = access.trialStats();
+    console.log(t.total
+      ? `  Trial  : ${t.total} one-time code(s) · ${t.used} used · ${t.total - t.used} left (${cap('sales')} each)`
+      : `  Trial  : no one-time codes set — issue some into ACCESS_CODES_TRIAL`);
+  } else {
+    console.log(`  Access : NO CODES SET — the trial is closed to everyone. Set ACCESS_CODE_DEMO and/or ACCESS_CODES_TRIAL in .env`);
+  }
+  // With no URL the booking card is hidden rather than shown broken, so this
+  // line is the only place a missing link becomes visible.
+  console.log(process.env.CALENDLY_URL
+    ? `  Booking: configured  (free-consultation link on the report)`
+    : `  Booking: MISSING — set CALENDLY_URL or the consultation card stays hidden`);
 
   // The on-camera presence feedback requires each persona to carry a Raven
   // perception layer. Verify both at boot and add the layer if it is absent,

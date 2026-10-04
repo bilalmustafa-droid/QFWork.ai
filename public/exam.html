@@ -9,6 +9,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
+<!-- Access gate. The landing page is public; the code prompt opens as a
+     modal when a visitor picks a scenario. The server enforces the real
+     restriction — every token-spending endpoint requires the session. -->
+<script src="access-gate.js"></script>
 <style>
   :root{
     --teal:#0d7a6f; --teal-d:#0a5f56; --orange:#ef6a3d;
@@ -42,8 +46,9 @@
 
   /* ── HOME ── */
   .eyebrow{ color:var(--teal); font-weight:600; font-size:13px; letter-spacing:.08em; text-transform:uppercase; margin:0 0 10px; }
-  h1.hero{ font-size:44px; line-height:1.04; letter-spacing:-.02em; margin:0 0 12px; font-weight:600; }
-  .lede{ color:var(--mut); font-size:17px; max-width:560px; margin:0 0 34px; line-height:1.55; }
+  h1.hero{ font-size:50px; line-height:1.03; letter-spacing:-.022em; margin:0 0 14px; font-weight:600;
+           overflow-wrap:break-word; }
+  .lede{ color:var(--mut); font-size:18px; max-width:560px; margin:0 0 26px; line-height:1.55; }
   .grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
   .scn{ text-align:left; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; cursor:pointer;
         transition:.18s; display:flex; gap:16px; align-items:flex-start; box-shadow:var(--shadow); }
@@ -54,6 +59,133 @@
   .scn .go{ font-size:13px; font-weight:600; color:var(--teal); }
   .home-foot{ color:var(--mut); font-size:13px; margin-top:26px; }
 
+  /* ── HOME: product showcase ──
+     A two-column hero: the headline and copy carry the left, a compact mock of
+     the live session sits on the right. The video tile is a placeholder from
+     /public/img/app-preview.svg — drop a real screenshot in as app-preview.jpg
+     and change the two src attributes. The Mute / Video / Audio / End row and
+     the figures under it are decoration: they describe the room, they are not
+     wired to the real controls in the #room view. */
+  .hero-showcase{ display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);
+                  gap:44px; align-items:center; margin:0 0 46px; }
+  .hs-copy .eyebrow{ margin-bottom:12px; }
+  .trial-flag{ display:inline-flex; align-items:center; gap:6px; background:#e9f6f4; color:var(--teal-d);
+               border:1px solid #b6ded7; border-radius:999px; padding:5px 13px;
+               font-size:12.5px; font-weight:600; margin-bottom:16px; }
+
+  /* compact proof points under the lede */
+  .hs-feats{ list-style:none; margin:0 0 26px; padding:0; display:grid; gap:11px; }
+  .feat{ display:flex; gap:11px; align-items:flex-start; font-size:14.5px; line-height:1.5; }
+  .feat-ic{ width:21px; height:21px; border-radius:50%; background:#e9f6f4; color:var(--teal);
+            display:grid; place-items:center; flex:none; margin-top:2px; }
+  .feat b{ font-weight:600; letter-spacing:-.005em; }
+  .feat i{ font-style:normal; color:var(--mut); }
+  .hs-cta{ display:inline-flex; align-items:center; gap:10px;
+           background:linear-gradient(135deg,var(--teal),#0f8f7d); color:#fff; border:0; border-radius:13px;
+           padding:15px 26px; font:inherit; font-size:16px; font-weight:600; cursor:pointer; transition:.16s; }
+  .hs-cta:hover{ filter:brightness(1.07); transform:translateY(-1px); }
+  .hs-tags{ display:flex; flex-wrap:wrap; gap:9px; margin-top:20px; }
+  .hs-tag{ border:1px solid var(--line); border-radius:999px; padding:6px 13px;
+           font-size:12.5px; font-weight:600; color:var(--teal); background:#fff; }
+
+  /* the mock itself — deliberately modest, it illustrates rather than competes */
+  .mock{ width:100%; max-width:430px; margin-left:auto; border:1px solid var(--line);
+         border-radius:16px; padding:12px; background:var(--card); box-shadow:var(--shadow); }
+  .mock-stage{ position:relative; background:linear-gradient(180deg,#0f1e33 0%, #0a1323 52%, #091421 100%); border-radius:11px; overflow:hidden; aspect-ratio:16/9; }
+  .mock-stage>img{ display:block; width:100%; height:100%; object-fit:cover; filter:brightness(.75) saturate(.8) contrast(1.04); }
+  .mock-badge{ position:absolute; top:8px; right:8px; background:rgba(255,255,255,.92); color:var(--ink);
+               font-size:10px; font-weight:600; padding:4px 9px; border-radius:999px; }
+  .mock-pip{ position:absolute; top:8px; right:8px; width:92px; aspect-ratio:4/3; border-radius:7px;
+             overflow:hidden; border:2px solid rgba(255,255,255,.7); background:linear-gradient(180deg,#1a2c42,#131d2d); box-shadow:0 8px 18px rgba(7,12,25,.22);
+             z-index:2; }
+  .mock-pip img{ display:block; width:100%; height:100%; object-fit:cover; filter:brightness(1.02) saturate(.85) contrast(.96); }
+  .mock-pip span{ position:absolute; left:6px; bottom:4px; font-size:8px; font-weight:600; color:#fff;
+                  background:rgba(2,6,23,.62); padding:1px 4px; border-radius:3px; }
+  .mock-name{ position:absolute; left:12px; bottom:12px; display:inline-flex; align-items:center; gap:8px;
+              background:rgba(10,16,26,.52); color:#fff; border:1px solid rgba(255,255,255,.18);
+              border-radius:999px; padding:5px 10px; font-size:11px; font-weight:600; backdrop-filter:blur(4px); }
+  .mock-name::before{ content:""; width:8px; height:8px; border-radius:50%; background:#35d399; display:block; }
+  .mock-ctrls{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin:11px 0; }
+  .mock-ctrl{ display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:8px;
+              padding:5px 9px; font-size:10.5px; color:var(--mut); background:#fcfdfd; white-space:nowrap; }
+  .mock-ctrl.is-end{ background:#ef4444; border-color:#ef4444; color:#fff; font-weight:600; }
+  .mock-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
+               border-top:1px solid var(--line); padding-top:11px; text-align:center; }
+  .mock-stats b{ display:block; font-size:15px; letter-spacing:-.01em; line-height:1.2; }
+  .mock-stats span{ font-size:10px; color:var(--mut); }
+  .mock-stats .m1 b{ color:var(--teal); }
+  .mock-stats .m2 b{ color:#7c5cd6; }
+  .mock-stats .m3 b{ color:var(--orange); }
+  @media (max-width:860px){
+    .hero-showcase{ grid-template-columns:1fr; gap:30px; margin-bottom:38px; }
+    .mock{ margin:0 auto; }
+  }
+
+  /* ── HOME: how it works (4-step flow) ── */
+  .showcase{ margin-top:52px; padding-top:38px; border-top:1px solid var(--line); }
+  .showcase-head{ max-width:600px; margin:0 0 24px; }
+  .showcase-head h2{ margin:0 0 8px; font-size:26px; letter-spacing:-.02em; font-weight:600; }
+  .showcase-head p{ margin:0; color:var(--mut); font-size:15px; line-height:1.55; }
+  .steps{ display:flex; align-items:stretch; }
+  .step{ flex:1 1 0; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:16px;
+         padding:20px 17px; box-shadow:var(--shadow); }
+  .step-n{ width:30px; height:30px; border-radius:50%; background:var(--teal); color:#fff;
+           display:grid; place-items:center; font-size:13px; font-weight:700; margin-bottom:13px; }
+  .step h3{ margin:0 0 7px; font-size:15px; line-height:1.3; letter-spacing:-.01em; }
+  .step p{ margin:0; color:var(--mut); font-size:13px; line-height:1.55; }
+  /* The connector between two steps. Rotated to point down once the row stacks. */
+  .step-arrow{ flex:none; width:36px; display:grid; place-items:center; color:var(--teal); opacity:.45; }
+  @media (max-width:860px){
+    .steps{ flex-direction:column; }
+    .step-arrow{ width:auto; height:34px; transform:rotate(90deg); }
+  }
+  /* Fallback tile if a photo file is missing, so a section never breaks. */
+  .shot-missing{ display:grid; place-items:center; width:100%; aspect-ratio:8/5;
+                 background:#eef2f4; color:var(--mut); font-size:13px; }
+
+
+  /* ── HOME: sponsor / partner logo row ──
+     Logo files live in /public/img/sponsors. Swap the files, keep the markup.
+     Logos render in their own colours — sponsors are generally required to be
+     shown as supplied, so no greyscale filter is applied here. */
+  .sponsors{ margin-top:46px; padding-top:34px; border-top:1px solid var(--line); }
+  .sponsors-label{ margin:0 0 20px; text-align:center; color:var(--mut); font-size:12px;
+                   font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
+  .logos{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
+          gap:18px 48px; }
+  .logos a, .logos .logo-slot{ display:block; flex:none; }
+  .logos img{ display:block; height:52px; width:auto; max-width:220px; transition:.18s; }
+  .logos a:hover img{ opacity:.75; }
+  /* Fallback chip if a logo file is missing, so the row never breaks. */
+  .logo-missing{ display:grid; place-items:center; height:52px; padding:0 20px; border-radius:999px;
+                 background:#eef2f4; color:var(--mut); font-size:12.5px; font-weight:600;
+                 letter-spacing:.02em; white-space:nowrap; }
+  @media (max-width:680px){
+    .logos{ gap:14px 26px; }
+    .logos img{ height:38px; max-width:170px; }
+  }
+
+  /* ── HOME: who we are ──
+     An uncaptioned gallery. The row is justified: each figure's flex-grow is set
+     to that photo's aspect ratio, so widths come out proportional to aspect and
+     every photo lands on the same height with nothing cropped. If you swap a
+     photo, update its --ar (width / height) and its width/height attributes. */
+  .company{ margin-top:52px; padding-top:38px; border-top:1px solid var(--line); }
+  .company-head{ max-width:600px; margin:0 0 26px; }
+  .company-head h2{ margin:0 0 8px; font-size:26px; letter-spacing:-.02em; font-weight:600; }
+  .company-head p{ margin:0; color:var(--mut); font-size:15px; line-height:1.55; }
+  .gallery{ display:flex; gap:14px; align-items:flex-start; }
+  .gallery figure{ margin:0; min-width:0; flex:var(--ar) 1 0; border-radius:16px; overflow:hidden;
+                   border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow); }
+  .gallery img{ display:block; width:100%; height:auto; background:#eef2f4; }
+  @media (max-width:760px){
+    .gallery{ flex-direction:column; }
+    .gallery figure{ flex:none; }
+  }
+  .company-foot{ margin:26px 0 0; color:var(--mut); font-size:13px; line-height:1.55; }
+  @media (max-width:680px){
+    .company-head h2{ font-size:23px; }
+  }
   /* ── PRECALL ── */
   .pc{ max-width:560px; margin:0 auto; background:var(--card); border:1px solid var(--line); border-radius:20px; padding:30px; box-shadow:var(--shadow); }
   .back{ background:none; border:0; color:var(--mut); font:inherit; cursor:pointer; padding:0; margin-bottom:20px; }
@@ -185,6 +317,37 @@
           border-radius:10px; padding:8px 13px; font-size:11.5px; color:var(--mut); line-height:1.3; }
   .vchip b{ font-size:15px; color:var(--ink); font-variant-numeric:tabular-nums; }
   .model-sec{ background:#f4fbf9; border-color:#cdeee8; }
+  /* ── LOCKED SECTIONS (sales tier) ──
+     The withheld content is never sent to the browser — see access.js
+     redactForTier(). What is blurred here is a generated skeleton, so
+     view-source, Print and the HTML export reveal nothing. */
+  .locked{ position:relative; overflow:hidden; }
+  .locked .skel{ padding:4px 0 2px; filter:blur(4.5px); opacity:.75; user-select:none;
+                 pointer-events:none; }
+  .locked .skel i{ display:block; height:11px; border-radius:999px; background:#dfe5ea; margin:11px 0; }
+  .locked .skel i:nth-child(2){ width:92%; } .locked .skel i:nth-child(3){ width:78%; }
+  .locked .skel i:nth-child(4){ width:86%; } .locked .skel i:nth-child(5){ width:64%; }
+  .lock-tag{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700;
+             letter-spacing:.05em; text-transform:uppercase; color:var(--warn);
+             background:#fff4ed; border:1px solid #f6ddd0; border-radius:999px; padding:3px 10px;
+             margin-left:9px; vertical-align:middle; }
+  .locked .lock-why{ margin:10px 0 0; font-size:13px; color:var(--mut); line-height:1.5; }
+
+  /* ── CONSULTATION CTA ── */
+  .cta{ margin-top:20px; background:linear-gradient(135deg,#0d1b24,#123a3a); border-radius:18px;
+        padding:28px 30px; color:#eaf3f2; box-shadow:0 20px 46px rgba(2,6,23,.24); }
+  .cta .k{ font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+           color:#5ec9bb; margin-bottom:11px; }
+  .cta h3{ margin:0 0 10px; font-size:23px; letter-spacing:-.02em; font-weight:600; color:#fff; }
+  .cta p{ margin:0 0 20px; line-height:1.6; color:#b6cdca; max-width:560px; font-size:14.5px; }
+  .cta ul{ margin:0 0 22px; padding-left:19px; color:#cfe2df; font-size:14px; }
+  .cta li{ margin:6px 0; line-height:1.5; }
+  .cta .btn-book{ display:inline-flex; align-items:center; gap:9px; background:var(--orange);
+                  color:#fff; border-radius:12px; padding:14px 24px; font-weight:600; font-size:15.5px;
+                  text-decoration:none; transition:.15s; }
+  .cta .btn-book:hover{ background:#d95a2e; transform:translateY(-1px); }
+  .cta .cta-note{ margin:14px 0 0; font-size:12.5px; color:#8fada9; }
+
   .fb-actions{ margin-top:22px; display:flex; flex-wrap:wrap; gap:10px; }
   .btn-secondary{ background:#fff; color:var(--ink); border:1px solid var(--line); display:inline-flex;
                   align-items:center; gap:8px; }
@@ -195,7 +358,7 @@
      Strips app chrome so the browser's own "Save as PDF" produces a clean
      document, and keeps report sections from splitting across pages. */
   @media print{
-    .topbar, .fb-actions, .back, .btn{ display:none !important; }
+    .topbar, .fb-actions, .back, .btn, .cta, .locked{ display:none !important; }
     html,body{ background:#fff; }
     main{ max-width:none; padding:0; }
     .view{ display:none !important; }
@@ -212,6 +375,7 @@
     .grid,.metrics{ grid-template-columns:1fr; }
     h1.hero{ font-size:34px; }
     .hero-score{ flex-direction:column; text-align:center; }
+    .cta{ padding:24px 20px; }
   }
 </style>
 </head>
@@ -228,11 +392,140 @@
 
   <!-- ════ HOME ════ -->
   <section id="home" class="view active">
-    <p class="eyebrow">Live practice</p>
-    <h1 class="hero serif">AI Trainer for workplace&nbsp;communication</h1>
-    <p class="lede">Have a real, face-to-face conversation with an AI partner — then get a full breakdown of your workplace English. Pick a scenario to begin.</p>
+    <!-- ── Hero ──
+         Headline and copy on the left, a compact mock of the live session on the
+         right. The video tile is a placeholder from /public/img/app-preview.svg —
+         drop a real screenshot in as app-preview.jpg and change the two src
+         attributes. The Mute / Video / Audio / End row and the figures beneath it
+         are decoration: they describe the room, they are not wired to the real
+         controls in the #room view, which is why the mock is aria-hidden. -->
+    <section class="hero-showcase">
+      <div class="hs-copy">
+        <p class="eyebrow">Live practice</p>
+        <h1 class="hero serif">AI Trainer for workplace communication</h1>
+        <p class="lede">Have a real, face-to-face conversation with an AI partner — then get a full breakdown of your workplace English. Pick a scenario to begin.</p>
+      </div>
+
+      <div class="mock" aria-hidden="true">
+        <div class="mock-stage">
+          <img src="img/ai-interviewer.jpg" alt="" loading="lazy" style="object-position:center 32%; filter:brightness(.72) saturate(.8) contrast(1.05);" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'shot-missing',textContent:'AI interviewer image missing'}))" />
+          <span class="mock-badge">AI partner</span>
+          <span class="mock-name">QFwork Interviewer</span>
+          <span class="mock-pip">
+            <img src="img/ai-interviewee.jpg" alt="" loading="lazy" style="object-position:center 20%; filter:brightness(1.04) saturate(.9) contrast(1.02);" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'shot-missing',textContent:'User image missing'}))" />
+            <span>You</span>
+          </span>
+        </div>
+        <div class="mock-ctrls">
+          <span class="mock-ctrl">🎙 Mute</span>
+          <span class="mock-ctrl">📹 Video on</span>
+          <span class="mock-ctrl">🔊 Audio on</span>
+          <span class="mock-ctrl is-end">End &amp; get feedback</span>
+        </div>
+        <div class="mock-stats">
+          <span class="m1"><b>05:00</b><span>Session length</span></span>
+          <span class="m2"><b>3</b><span>Signals measured</span></span>
+          <span class="m3"><b>4</b><span>Scenarios</span></span>
+        </div>
+      </div>
+    </section>
+
     <div class="grid" id="scnGrid"></div>
     <p class="home-foot">🎧 Headphones recommended · you'll be asked for camera &amp; microphone access.</p>
+
+    <!-- ── How it works ──
+         Four steps, connected left-to-right on desktop and top-to-bottom once the
+         row stacks. Add or remove a .step and its .step-arrow together. -->
+    <section class="showcase" aria-labelledby="howHead">
+      <div class="showcase-head">
+        <h2 class="serif" id="howHead">How it works</h2>
+        <p>Five minutes of real conversation, then a report built from what you actually said, how you sounded and how you came across.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-n">1</div>
+          <h3>AI simulated practice</h3>
+          <p>Rehearse your scenario as if you were interacting with the actual person.</p>
+        </div>
+        <div class="step-arrow" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        </div>
+        <div class="step">
+          <div class="step-n">2</div>
+          <h3>Analysed like a person</h3>
+          <p>We track not only your content, but your facial expression, voice and tone, body language and more.</p>
+        </div>
+        <div class="step-arrow" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        </div>
+        <div class="step">
+          <div class="step-n">3</div>
+          <h3>In-depth report by your AI coach</h3>
+          <p>See your performance immediately, with detailed feedback, improvement suggestions, scoring and more.</p>
+        </div>
+        <div class="step-arrow" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        </div>
+        <div class="step">
+          <div class="step-n">4</div>
+          <h3>Consult a human expert coach</h3>
+          <p>Want to get even better? We offer one-on-one consultations with our expert coaching team, based on your report. Ace any workplace conversation you need.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Sponsors / partners ──
+         Placeholder wordmarks live in /public/img/sponsors/sponsor-1..5.svg.
+         Drop the real logos in with the same filenames (SVG or PNG, on a
+         transparent background) and update the alt text below. Wrap a logo in
+         an <a href> if the partner should be clickable; the bare <span> is
+         there for partners with no link. Nothing else changes. -->
+    <section class="sponsors" aria-labelledby="sponsorsLabel">
+      <p class="sponsors-label" id="sponsorsLabel">Sponsored by</p>
+      <div class="logos">
+        <span class="logo-slot">
+          <img src="img/sponsors/sponsor-1.jpg" alt="gov" loading="lazy"
+               onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'logo-missing',textContent:'Northbridge'}))" />
+        </span>
+        <span class="logo-slot">
+          <img src="img/sponsors/sponsor-2.png" alt="YDC" loading="lazy"
+               onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'logo-missing',textContent:'Harbour Co'}))" />
+        </span>
+        <span class="logo-slot">
+          <img src="img/sponsors/sponsor-3.png" alt="Gov Fund" loading="lazy"
+               onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'logo-missing',textContent:'Meridian'}))" />
+        </span>
+        <span class="logo-slot">
+          <img src="img/sponsors/sponsor-4.png" alt="WeVenture" loading="lazy"
+               onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'logo-missing',textContent:'Lantau'}))" />
+        </span>
+        <span class="logo-slot">
+          <img src="img/sponsors/sponsor-5.jpeg" alt="GBA" loading="lazy"
+               onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'logo-missing',textContent:'Pearl Delta'}))" />
+        </span>
+      </div>
+    </section>
+
+    <!-- ── Who we are ──
+         An uncaptioned gallery of event photography from /public/img/event-*.png.
+         Each figure carries --ar (that photo's width / height) so the row stays
+         justified and nothing is cropped; keep it in step if you swap a photo. -->
+    <section class="company" aria-labelledby="companyHead">
+      <div class="company-head">
+        <h2 class="serif" id="companyHead">Who we are</h2>
+        <p>A Hong Kong team building AI practice tools for workplace English. You will find us at startup and industry events across the city.</p>
+      </div>
+      <div class="gallery">
+        <figure style="--ar:1.528">
+          <img src="img/event-2.png" alt="The QFwork team demonstrating the product to visitors at the HKUST Entrepreneurship Center booth" width="1320" height="864" loading="lazy"
+               onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'shot-missing',textContent:'Photo coming soon'}))" />
+        </figure>
+        <figure style="--ar:0.750">
+          <img src="img/event-3.png" alt="Three members of the QFwork team at the HKUST Startups at AI+ In Action booth" width="1536" height="2048" loading="lazy"
+               onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'shot-missing',textContent:'Photo coming soon'}))" />
+        </figure>
+      </div>
+    </section>
   </section>
 
   <!-- ════ PRECALL (start-call screen) ════ -->
@@ -374,8 +667,14 @@ $('scnGrid').innerHTML = SCENARIOS.map((s,i) => `
       <span class="go">Start call →</span>
     </span>
   </button>`).join('');
+// Picking a scenario is the first step that leads to a paid call, so this is
+// where the code is asked for. Visitors who never click one read the page and
+// are never prompted; QFAccess.require runs straight through once unlocked.
 document.querySelectorAll('.scn').forEach(el =>
-  el.addEventListener('click', () => openPrecall(SCENARIOS[+el.dataset.i]))
+  el.addEventListener('click', () => {
+    const s = SCENARIOS[+el.dataset.i];
+    QFAccess.require(() => openPrecall(s), s.title);
+  })
 );
 
 // ── view switching (class-based, robust) ──
@@ -488,12 +787,16 @@ function openPrecall(s){
 // which means the call itself joins with a single click.
 let dev = { stream:null, ctx:null, raf:null };
 
-async function startCall(){
-  state.userContext = $('ctx').value;
-  show('devcheck');
-  $('dcStatus').textContent = '';
-  $('joinBtn').disabled = true;
-  await openDevices();
+function startCall(){
+  // Re-checked rather than assumed: the precall form can sit open long enough
+  // for the session to lapse, and the device check is a poor place to find out.
+  QFAccess.require(async () => {
+    state.userContext = $('ctx').value;
+    show('devcheck');
+    $('dcStatus').textContent = '';
+    $('joinBtn').disabled = true;
+    await openDevices();
+  }, state.scenarioTitle);
 }
 
 async function openDevices(camId, micId){
@@ -588,11 +891,14 @@ async function joinCall(){
   busy('Setting up your AI partner…', 'Connecting to the video room');
   try{
     const r = await fetch('/api/conversation', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json', ...QFAccess.headers()},
       body: JSON.stringify({ scenarioTitle: state.scenarioTitle, userContext: state.userContext || '' })
     });
     const data = await r.json();
+    if(r.status === 401) return QFAccess.expired();
+    if(r.status === 403 && data.code === 'trial-spent') return showTrialSpent(data.error);
     if(!r.ok) throw new Error(data.error || 'Could not start the session.');
+    QFAccess.setRunsLeft(data.runsLeft);
 
     state.conversationId = data.conversationId;
     state.scenarioPrompt = data.scenarioPrompt || '';
@@ -610,14 +916,18 @@ async function joinCall(){
 }
 
 // ── timer ──
+// The remaining time is derived from the wall clock on every tick rather than
+// decremented, because browsers throttle setInterval in a backgrounded tab —
+// counting ticks would hand a user who switches tabs more than their 5 minutes.
+// Tavus enforces the same cap server-side (max_call_duration) as the backstop.
 function startTimer(){
   state.callStart = Date.now();
   state.remaining = state.maxSeconds;
   renderTime();
   state.timer = setInterval(() => {
-    state.remaining--;
+    state.remaining = state.maxSeconds - Math.round((Date.now() - state.callStart) / 1000);
     renderTime();
-    if(state.remaining <= 0){ stopTimer(); endCall(); }   // time's up → auto-end
+    if(state.remaining <= 0){ stopTimer(); endCall('timeup'); }   // time's up → auto-end
   }, 1000);
 }
 function stopTimer(){ clearInterval(state.timer); }
@@ -632,7 +942,7 @@ function renderTime(){
 }
 
 // ── end → voice upload → transcript → feedback ──
-async function endCall(){
+async function endCall(reason){
   if (state.ending) return;                 // ignore double-clicks / timer race
   if (!state.conversationId) return goHome();
   state.ending = true;
@@ -640,19 +950,21 @@ async function endCall(){
   stopTimer();
   const wav = stopVoiceCapture();           // grab the recording BEFORE tearing anything down
   $('frame').src = 'about:blank';
-  busy('Analysing your workplace English…', 'Transcript, voice audio and camera observations — this can take up to a minute');
+  // Make the automatic cut-off read as intentional rather than as a dropped call.
+  busy(reason === 'timeup' ? 'Time’s up — building your report…' : 'Analysing your workplace English…',
+       'Transcript, voice audio and camera observations — this can take up to a minute');
   try{
     // 1) ship the mic recording for the tone/pacing/clarity analysis (best-effort)
     if (wav){
       try{
         await fetch(`/api/voice-sample/${encodeURIComponent(state.conversationId)}`, {
-          method:'POST', headers:{'Content-Type':'audio/wav'}, body: wav
+          method:'POST', headers:{'Content-Type':'audio/wav', ...QFAccess.headers()}, body: wav
         });
       }catch(e){ console.warn('Voice upload failed — continuing without audio analysis:', e); }
     }
     // 2) request the full feedback report
     const r = await fetch('/api/interview-feedback', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json', ...QFAccess.headers()},
       body: JSON.stringify({
         conversationId: state.conversationId,
         scenarioTitle: state.scenarioTitle,
@@ -660,11 +972,24 @@ async function endCall(){
       })
     });
     const data = await r.json();
+    if(r.status === 401){ state.ending = false; return QFAccess.expired(); }
     if(!r.ok) throw new Error(data.error || 'Could not generate feedback.');
     state.conversationId = null;            // call fully finished — nothing to abandon
-    renderFeedback(data.feedback, data.voiceStats);
+    renderFeedback(data.feedback, data.voiceStats, data.tier, data.locked);
   }catch(e){ showError(e.message); }
   finally{ state.ending = false; $('endBtn').disabled = false; }
+}
+
+// The trial is spent (sales tier, cap reached). Nothing was billed — send them
+// to the consultation instead of a dead end.
+function showTrialSpent(msg){
+  const url = QFAccess.calendlyUrl();
+  $('fb').innerHTML = `
+    <div class="fb-head"><h1 class="fbtitle serif">Your trial is complete</h1></div>
+    <div class="sec"><p style="margin:0;line-height:1.6;">${escapeHtml(msg || 'You’ve used your trial session.')}</p></div>
+    ${bookingCta(url, 'trial-spent')}
+    <p style="margin-top:16px;"><button class="linkish" onclick="goHome()">← Back to scenarios</button></p>`;
+  show('fb');
 }
 
 function showError(msg){
@@ -683,13 +1008,54 @@ function band(score){
   return            { label:'Needs work',  color:'#dc2626' };
 }
 
-function renderFeedback(f, voiceStats){
+// ── locked sections & booking CTA (sales tier) ──
+// The withheld text never arrives from the server, so there is nothing here to
+// un-blur: what gets blurred is a skeleton, and the real content is genuinely
+// absent from the DOM, the print view and the HTML export.
+function lockedSec(title, why, extraClass){
+  return `<div class="sec locked ${extraClass || ''}">
+    <h3>${title}<span class="lock-tag">🔒 In your review</span></h3>
+    <div class="skel"><i></i><i></i><i></i><i></i><i></i></div>
+    <p class="lock-why">${why}</p>
+  </div>`;
+}
+
+function bookingCta(url, variant){
+  // No booking link configured → no card, rather than a broken promise or a
+  // developer warning in front of a prospect. The server says so at boot.
+  if(!url) return '';
+  const lead = variant === 'trial-spent'
+    ? 'Your session is recorded and ready to be read properly.'
+    : 'The rest of this report is reserved for your consultation.';
+  return `<div class="cta">
+    <div class="k">Free consultation</div>
+    <h3>Have your results read by a recruitment expert</h3>
+    <p>${lead} Book a free 1-to-1 session and a professional recruiter will go through your report with you — what a hiring manager would take from this conversation, and what to change before your next real one.</p>
+    <ul>
+      <li>Your full presence, voice and delivery analysis, explained</li>
+      <li>Line-by-line rewrites of the phrases that cost you</li>
+      <li>Practical interview advice for the role you're actually chasing</li>
+    </ul>
+    <a class="btn-book" href="${escapeHtml(url)}" target="_blank" rel="noopener">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Book your free consultation</a>
+    <p class="cta-note">Opens our booking calendar in a new tab · no charge, no obligation.</p>
+  </div>`;
+}
+
+function renderFeedback(f, voiceStats, tier, locked){
   if(!f) return showError('Empty feedback.');
   const sc = f.scores || {}, da = f.deliveryAnalysis || {};
   const va = f.voiceAnalysis || {};
+  const lockedSet = new Set(locked || []);
+  const gated     = tier === 'sales';
+  const bookUrl   = QFAccess.calendlyUrl();
   const hasVoice = !!(va.toneIntonation || va.pacing || va.clarityPronunciation || va.vocalEnergy);
   const b  = band(f.overallScore || 0);
-  const vchips = hasVoice && voiceStats ? [
+  // The measured stat chips stay visible even on the gated report — they are
+  // the proof that the analysis is real, which is what makes booking worth it.
+  const showChips = !!voiceStats && (hasVoice || lockedSet.has('voice'));
+  const vchips = showChips ? [
     voiceStats.wpm                       ? chip(voiceStats.wpm, 'words / min')                                  : '',
     voiceStats.pitchVariabilitySt != null ? chip(voiceStats.pitchVariabilitySt + ' st', 'pitch variation')      : '',
     voiceStats.hesitationsPerMin  != null ? chip(voiceStats.hesitationsPerMin + '/min', 'hesitation pauses')    : '',
@@ -724,21 +1090,33 @@ function renderFeedback(f, voiceStats){
     <div class="sec"><h3>Summary</h3><p>${escapeHtml(f.summary||'')}</p></div>
     ${f.presenceFeedback ? `<div class="sec presence-sec"><h3>Presence on camera</h3><p>${escapeHtml(f.presenceFeedback)}</p>
       ${Array.isArray(f.presencePoints) && f.presencePoints.filter(Boolean).length ? `<ul>${f.presencePoints.filter(Boolean).map(p=>`<li>${escapeHtml(p)}</li>`).join('')}</ul>` : ''}
-      <p class="foot" style="margin-top:9px;">Observed live by the AI's vision during the call — eye contact, expression, posture and engagement (genuinely seen by the camera, not inferred from text).</p></div>` : ''}
+      <p class="foot" style="margin-top:9px;">Observed live by the AI's vision during the call — eye contact, expression, posture and engagement (genuinely seen by the camera, not inferred from text).</p></div>`
+      : lockedSet.has('presence')
+        ? lockedSec('Presence on camera',
+            'The AI’s vision watched your eye contact, expression, posture and composure throughout the call. Your expert will walk you through what it saw.', 'presence-sec')
+        : ''}
     <div class="cols">
-      <div class="sec good-sec"><h3>What worked</h3><ul>${(f.strengths||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ul></div>
-      <div class="sec warn-sec"><h3>What to improve</h3><ul>${(f.improvements||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ul></div>
+      <div class="sec good-sec"><h3>What worked</h3><ul>${(f.strengths||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ul>
+        ${f.strengthsHeldBack ? `<p class="lock-why">＋ ${f.strengthsHeldBack} more strength${f.strengthsHeldBack>1?'s':''} identified <span class="lock-tag">🔒 In your review</span></p>` : ''}</div>
+      <div class="sec warn-sec"><h3>What to improve</h3><ul>${(f.improvements||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ul>
+        ${f.improvementsHeldBack ? `<p class="lock-why">＋ ${f.improvementsHeldBack} more improvement${f.improvementsHeldBack>1?'s':''} identified <span class="lock-tag">🔒 In your review</span></p>` : ''}</div>
     </div>
-    ${corr ? `<div class="sec"><h3>Line-by-line polish</h3>${corr}</div>` : ''}
-    ${hasVoice ? `<div class="sec voice-sec"><h3>Voice &amp; delivery — measured from your audio</h3>
+    ${corr ? `<div class="sec"><h3>Line-by-line polish</h3>${corr}</div>`
+      : lockedSet.has('corrections')
+        ? lockedSec('Line-by-line polish',
+            'We logged the exact phrases that weakened your case, each with a stronger rewrite and the reason it lands better.')
+        : ''}
+    ${hasVoice || (gated && lockedSet.has('voice')) ? `<div class="sec voice-sec ${hasVoice ? '' : 'locked'}"><h3>Voice &amp; delivery — measured from your audio${hasVoice ? '' : '<span class="lock-tag">🔒 In your review</span>'}</h3>
       ${vchips ? `<div class="vchips">${vchips}</div>` : ''}
-      <div class="delivery">
+      ${hasVoice ? `<div class="delivery">
         ${va.toneIntonation ? `<div><b>Tone &amp; intonation</b><span>${escapeHtml(va.toneIntonation)}</span></div>` : ''}
         ${va.pacing ? `<div><b>Pacing &amp; pauses</b><span>${escapeHtml(va.pacing)}</span></div>` : ''}
         ${va.clarityPronunciation ? `<div><b>Clarity &amp; pronunciation</b><span>${escapeHtml(va.clarityPronunciation)}</span></div>` : ''}
         ${va.vocalEnergy ? `<div><b>Vocal energy</b><span>${escapeHtml(va.vocalEnergy)}</span></div>` : ''}
       </div>
-      <p class="foot" style="margin-top:9px;">Measured directly from your recorded voice — pitch contour, loudness dynamics and speech timing — not guessed from text.</p>
+      <p class="foot" style="margin-top:9px;">Measured directly from your recorded voice — pitch contour, loudness dynamics and speech timing — not guessed from text.</p>`
+      : `<div class="skel"><i></i><i></i><i></i><i></i><i></i></div>
+      <p class="lock-why">These are your real measurements. What they mean for tone, pacing, clarity and energy — and how to shift them — comes with your expert review.</p>`}
     </div>` : ''}
     <div class="sec"><h3>Language delivery — from the transcript</h3><div class="delivery">
       <div><b>Filler words</b><span>${escapeHtml(da.fillerWords||'—')}</span></div>
@@ -746,20 +1124,25 @@ function renderFeedback(f, voiceStats){
       <div><b>Confidence markers</b><span>${escapeHtml(da.confidenceMarkers||'—')}</span></div>
       <div><b>Pacing &amp; flow</b><span>${escapeHtml(da.pacingFlow||'—')}</span></div>
     </div></div>
-    ${f.rewrittenResponse ? `<div class="sec model-sec"><h3>Model answer</h3><div class="model">${escapeHtml(f.rewrittenResponse)}</div></div>` : ''}
-    <p class="foot">${hasVoice
+    ${f.rewrittenResponse ? `<div class="sec model-sec"><h3>Model answer</h3><div class="model">${escapeHtml(f.rewrittenResponse)}</div></div>`
+      : lockedSet.has('model')
+        ? lockedSec('Model answer',
+            'Your whole conversation, rewritten in the professional English that would have scored in the 90s — your own points, elevated.')
+        : ''}
+    <p class="foot">${(hasVoice || lockedSet.has('voice'))
       ? 'This report combines the conversation transcript, real acoustic analysis of your recorded voice (pitch, pacing, clarity, energy) and live camera observations.'
       : 'Voice audio wasn’t captured for this call, so delivery notes are inferred from the transcript’s word patterns. Allow microphone access on this page to unlock measured tone, pacing and clarity feedback.'}</p>
+    ${bookingCta(bookUrl, gated ? 'gated' : 'full')}
     <div class="fb-actions">
       <button class="btn btn-primary" style="width:auto;" onclick="location.reload()">Practise again</button>
-      <button class="btn btn-secondary" onclick="downloadReport()">
+      ${gated ? '' : `<button class="btn btn-secondary" onclick="downloadReport()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
         Download report
       </button>
       <button class="btn btn-secondary" onclick="window.print()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
         Print / Save as PDF
-      </button>
+      </button>`}
       <span class="fb-saved" id="fbSaved" hidden>Saved to your device</span>
     </div>
   `;
@@ -771,7 +1154,9 @@ function renderFeedback(f, voiceStats){
 // device, and can be printed to PDF from there. No third-party library.
 function downloadReport(){
   const report = $('fb').cloneNode(true);
-  report.querySelectorAll('.fb-actions').forEach(el => el.remove());
+  // Drop app chrome, the booking card and any locked placeholder, matching what
+  // the print stylesheet strips — the saved file is the report, nothing else.
+  report.querySelectorAll('.fb-actions, .cta, .locked').forEach(el => el.remove());
 
   // Re-encode the logo already displayed in the header rather than re-fetching
   // it, so the export never depends on the network being available. Drawn at
@@ -846,10 +1231,17 @@ function metric(label,v){
 }
 
 // ── design preview: open /exam.html?demo=feedback to see the feedback page
-//    with sample data (no Tavus call needed) ──
-if (new URLSearchParams(location.search).get('demo') === 'feedback') {
+//    with sample data (no Tavus call needed). Add &tier=sales to preview the
+//    gated version a sales prospect sees. Still behind the access gate, so it
+//    waits for qf-access-granted before drawing. ──
+const previewParams = new URLSearchParams(location.search);
+if (previewParams.get('demo') === 'feedback') {
+  const previewTier = previewParams.get('tier') === 'sales' ? 'sales' : 'demo';
+  document.addEventListener('qf-access-granted', () => renderPreview(previewTier));
+}
+function renderPreview(previewTier){
   state.scenarioTitle = 'Job Interview';
-  renderFeedback({
+  const sample = {
     overallScore: 74,
     scores: { clarity: 78, professionalism: 81, confidence: 63, vocabulary: 72 },
     coachNote: "A confident, well-structured interview overall — you tied your background to the role clearly. Your weakest moment was hedging on the 'biggest weakness' question; commit to an answer and show what you did about it.",
@@ -887,10 +1279,26 @@ if (new URLSearchParams(location.search).get('demo') === 'feedback') {
       vocalEnergy: "Loudness stayed within a fairly narrow 5.8 dB band — steady and composed, though a touch more projection on your key achievements would help them land."
     },
     rewrittenResponse: "Thanks for having me. I've spent the last three years in customer operations, where I led a team of four and owned our support metrics. Last year I redesigned our triage process, which cut average response time by 30% and lifted satisfaction scores from 82% to 91%. I'm drawn to this role because it combines that operational focus with a stronger analytics component, which is exactly where I want to grow. One area I'm actively working on is delegation — I used to absorb too much myself, so I've started setting clear ownership upfront, and it's made my team noticeably more autonomous."
-  }, {
+  };
+  const sampleStats = {
     wpm: 138, pitchVariabilitySt: 1.4, hesitationsPerMin: 7.1, clarityScore: 81,
     intonationLabel: 'somewhat flat', energyLabel: 'moderate variation'
-  });
+  };
+
+  if (previewTier !== 'sales') return renderFeedback(sample, sampleStats, 'demo', []);
+
+  // Mirror access.js redactForTier() so the preview shows exactly what a sales
+  // prospect receives. Preview-only — the live report is redacted on the server.
+  const held = {
+    ...sample,
+    strengthsHeldBack:    Math.max(0, sample.strengths.length - 1),
+    improvementsHeldBack: Math.max(0, sample.improvements.length - 1),
+    strengths:    sample.strengths.slice(0, 1),
+    improvements: sample.improvements.slice(0, 1),
+    presenceFeedback: '', presencePoints: [], voiceAnalysis: {},
+    sentenceCorrections: [], rewrittenResponse: ''
+  };
+  renderFeedback(held, sampleStats, 'sales', ['detail','presence','voice','corrections','model']);
 }
 </script>
 </body>

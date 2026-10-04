@@ -1,0 +1,9 @@
+<!-- PLACEHOLDER — the small self-view tile in the home showcase mockup.
+     Replace with public/img/app-preview-you.jpg and update the src in exam.html. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" width="160" height="120" role="img" aria-label="Your own camera view">
+  <rect width="160" height="120" fill="#16233a"/>
+  <g transform="translate(80 76)">
+    <path d="M-38 44 C-38 14 -19 2 0 2 C19 2 38 14 38 44 Z" fill="#31506b"/>
+    <circle cx="0" cy="-16" r="19" fill="#3d6484"/>
+  </g>
+</svg>

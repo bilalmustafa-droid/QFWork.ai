@@ -1,0 +1,18 @@
+<!-- PLACEHOLDER — replace with a real photo at public/img/showcase-2.jpg
+     and change the <img src> in exam.html / index.html to match. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" role="img" aria-label="Placeholder image">
+  <defs>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff1e8"/>
+      <stop offset="100%" stop-color="#fbdfd0"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#g2)"/>
+  <rect x="14" y="14" width="772" height="472" rx="10" fill="none" stroke="#ef6a3d" stroke-opacity=".3" stroke-width="2" stroke-dasharray="10 9"/>
+  <g transform="translate(400 214)" fill="none" stroke="#d1552a" stroke-opacity=".6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-58 -40h116M-50 -40v52a10 10 0 0 0 10 10h80a10 10 0 0 0 10-10v-52"/>
+    <path d="M-22 46l22-22 22 22"/>
+  </g>
+  <text x="400" y="316" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="27" font-weight="600" fill="#b8471f">The feedback report</text>
+  <text x="400" y="352" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="19" fill="#d1552a" fill-opacity=".75">Placeholder 2 — drop your photo in /public/img/</text>
+</svg>

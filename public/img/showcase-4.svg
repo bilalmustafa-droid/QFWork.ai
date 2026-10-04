@@ -1,0 +1,18 @@
+<!-- PLACEHOLDER — replace with a real photo at public/img/showcase-4.jpg
+     and change the <img src> in exam.html / index.html to match. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" role="img" aria-label="Placeholder image">
+  <defs>
+    <linearGradient id="g4" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e8f4f1"/>
+      <stop offset="100%" stop-color="#cfe6e0"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#g4)"/>
+  <rect x="14" y="14" width="772" height="472" rx="10" fill="none" stroke="#0d7a6f" stroke-opacity=".28" stroke-width="2" stroke-dasharray="10 9"/>
+  <g transform="translate(400 210)" fill="none" stroke="#0a5f56" stroke-opacity=".55" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-54 34V4M-18 34v-56M18 34v-34M54 34V-30"/>
+    <path d="M-70 46h140"/>
+  </g>
+  <text x="400" y="316" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="27" font-weight="600" fill="#0a5f56">Your voice, measured</text>
+  <text x="400" y="352" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="19" fill="#0d7a6f" fill-opacity=".72">Placeholder 4 — drop your photo in /public/img/</text>
+</svg>

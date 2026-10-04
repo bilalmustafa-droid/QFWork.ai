@@ -51,12 +51,16 @@ async function fetchResilient(url, opts = {}, { timeout = 20000, retries = 2 } =
 // Start a real-time video conversation with the interviewer replica.
 // `personaId` (optional) lets a scenario use its own persona — e.g. the
 // patient "presentation executive" — instead of the default interviewer.
-async function createConversation({ conversationName, conversationalContext, customGreeting, callbackUrl, personaId }) {
+async function createConversation({ conversationName, conversationalContext, customGreeting, callbackUrl, personaId, maxSeconds: maxSecondsOverride }) {
   if (!process.env.TAVUS_API_KEY)    throw new Error('TAVUS_API_KEY is not set on the server.');
   if (!process.env.TAVUS_REPLICA_ID) throw new Error('TAVUS_REPLICA_ID is not set (pick a stock replica in the Tavus dashboard).');
 
   // Hard per-call cap (seconds) — the single best guard against runaway billing.
-  const maxSeconds = parseInt(process.env.TAVUS_MAX_CALL_SECONDS || '300', 10);
+  // The caller passes the cap for the session's tier (see access.callSeconds);
+  // the env var is the fallback for any caller that doesn't.
+  const maxSeconds = Number.isFinite(maxSecondsOverride) && maxSecondsOverride > 0
+    ? Math.round(maxSecondsOverride)
+    : parseInt(process.env.TAVUS_MAX_CALL_SECONDS || '300', 10);
 
   // Tavus bills from the moment a conversation is created, because the replica
   // immediately starts waiting in the room — not from when the user joins.
